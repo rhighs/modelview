@@ -2,8 +2,8 @@ CXX:=clang
 LIBPATH:=./build
 EXT:=./external
 SOURCE:=*.c
-LDPATHS:=-L$(LIBPATH)/SDL
-INCLUDE:=-I$(EXT)/SDL/include -I$(EXT)/glad/include -I$(EXT)/stb
+LDPATHS:=-L$(LIBPATH)/SDL -L$(LIBPATH)/cglm
+INCLUDE:=-I$(EXT)/SDL/include -I$(EXT)/glad/include -I$(EXT)/stb -I$(EXT)/cglm/include
 LDFLAGS:=-lSDL2 -lSDL2main -lGL -lm
 CXXFLAGS:=-std=c99
 OBJ:=$(LIBPATH)/glad/glad.o
@@ -28,6 +28,13 @@ glad: ensure-build
 		&& cd ../..;\
 	fi
 
+cglm: ensure-build
+	@if ! [ -f "$(LIBPATH)/cglm/libcglm.so" ]; then\
+		cd $(LIBPATH)/cglm\
+		&& cmake ../../external/cglm && make\
+		&& cd ../..;\
+	fi
+
 .PHONY: ensure-build
 ensure-build:
-	mkdir -p $(LIBPATH) && mkdir -p $(LIBPATH)/SDL && mkdir -p $(LIBPATH)/glad
+	mkdir -p $(LIBPATH) && mkdir -p $(LIBPATH)/SDL && mkdir -p $(LIBPATH)/glad && mkdir -p $(LIBPATH)/cglm;

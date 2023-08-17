@@ -19,6 +19,8 @@
 #include <SDL2/SDL.h>
 #define PROGRAM_NAME "test"
 
+#include <cglm/mat4.h>
+
 #include "types.h"
 
 /* A simple function that prints a message, the error code returned by SDL,
@@ -224,6 +226,8 @@ int main(int argc, char *argv[])
     stbi_image_free(image_data);
 
     glActiveTexture(GL_TEXTURE0);
+
+    mat4 some_matrix = {};
 
     SDL_Event event;
     i32 running = 1;
