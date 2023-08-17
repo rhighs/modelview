@@ -3,9 +3,6 @@
 
 #include <math.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
@@ -14,12 +11,15 @@
 /* Ensure we are using opengl's core profile only */
 #define GL3_PROTOTYPES 1
 #include <glad/glad.h>
-#include <GL/gl.h>
 
 #include <SDL2/SDL.h>
 #define PROGRAM_NAME "test"
 
 #include <cglm/mat4.h>
+#include <cglm/vec3.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 #include "types.h"
 

@@ -1,0 +1,13 @@
+minescam
+compile_commands.json
+.cache
+
+# Resources and media
+res
+
+# Build artifacts
+build
+*.la
+*.so
+*.o
+*.a

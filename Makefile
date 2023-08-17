@@ -38,3 +38,19 @@ cglm: ensure-build
 .PHONY: ensure-build
 ensure-build:
 	mkdir -p $(LIBPATH) && mkdir -p $(LIBPATH)/SDL && mkdir -p $(LIBPATH)/glad && mkdir -p $(LIBPATH)/cglm;
+
+.PHONY: bear
+bear:
+	@which bear\
+	@ if [[ $? > 0 ]]; then\
+		echo "bear not found, please install it";\
+	fi
+
+.PHONY: setup-clangd
+setup-clangd:
+	@bear -- make all
+
+.PHONY: clean
+clean:
+	rm -rf build *.so *.o *.a $(PROG)
+
