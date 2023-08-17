@@ -5,7 +5,7 @@ SOURCE:=*.c
 LDPATHS:=-L$(LIBPATH)/SDL -L$(LIBPATH)/cglm
 INCLUDE:=-I$(EXT)/SDL/include -I$(EXT)/glad/include -I$(EXT)/stb -I$(EXT)/cglm/include
 LDFLAGS:=-lSDL2 -lSDL2main -lGL -lm
-CXXFLAGS:=-std=c99
+CXXFLAGS:=-std=c99 -Wall
 OBJ:=$(LIBPATH)/glad/glad.o
 PROG:=minescam
 

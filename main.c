@@ -1,3 +1,7 @@
+#include "cglm/call/io.h"
+#include "cglm/io.h"
+#include "cglm/mat4.h"
+#include "cglm/util.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -15,8 +19,7 @@
 #include <SDL2/SDL.h>
 #define PROGRAM_NAME "test"
 
-#include <cglm/mat4.h>
-#include <cglm/vec3.h>
+#include <cglm/cglm.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -72,10 +75,16 @@ void sp_use(ShaderProgram *program) {
     glUseProgram(program->program);
 }
 
-void sp_set_uniform4f(ShaderProgram *program, const char* uniform,
+void sp_set_uniform_vec4f(ShaderProgram *program, const char* uniform,
         const float x, const float y, const float z, const float w) {
     const i32 uniform_location = glGetUniformLocation(program->program, uniform);
     glUniform4f(uniform_location, x, y, z, w);
+}
+
+void sp_set_uniform_mat4(ShaderProgram *program, const char* uniform,
+        const mat4 mat) {
+    const i32 uniform_location = glGetUniformLocation(program->program, uniform);
+    glUniformMatrix4fv(uniform_location, 1, GL_FALSE, (float *)mat);
 }
 
 ShaderProgram sp_create(
@@ -123,18 +132,17 @@ ShaderProgram sp_create(
     return (ShaderProgram) { .program = shader_program };
 }
  
-/* Our program's entry point */
-int main(int argc, char *argv[])
-{
-    SDL_Window *mainwindow; /* Our window handle */
-    SDL_GLContext maincontext; /* Our opengl context handle */
+int main(int argc, char *argv[]) {
+    SDL_Window *mainwindow;
+    SDL_GLContext maincontext;
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) /* Initialize SDL's Video subsystem */
-        sdldie("Unable to initialize SDL"); /* Or die on error */
+    const int win_height = 600;
+    const int win_width = 800;
 
-    /* Request opengl 3.2 context.
-     * SDL doesn't have the ability to choose which profile at this time of writing,
-     * but it should default to the core profile */
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) 
+        sdldie("Unable to initialize SDL");
+
+    // Request opengl 3.2 context.
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 
@@ -143,9 +151,6 @@ int main(int argc, char *argv[])
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-    const int win_height = 600;
-    const int win_width = 800;
-    /* Create our window centered at 512x512 resolution */
     mainwindow = SDL_CreateWindow(PROGRAM_NAME,
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         win_width, win_height,
@@ -174,7 +179,7 @@ int main(int argc, char *argv[])
                 image_path, stbi_failure_reason());
     }
 
-    /* This makes our buffer swap syncronized with the monitor's vertical refresh */
+    // This makes our buffer swap syncronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
 
     float vertices[] = {
@@ -227,11 +232,22 @@ int main(int argc, char *argv[])
 
     glActiveTexture(GL_TEXTURE0);
 
-    mat4 some_matrix = {};
-
     SDL_Event event;
     i32 running = 1;
+
+    u64 now_time = SDL_GetPerformanceCounter();
+    u64 last_time = 0;
+    f64 dt_secs = 0.0;
+
+    mat4 transform = {};
+    glm_mat4_identity(transform);
+    // vec3 translation_vec = { 0.4f, 0.2f, 0.0f };
+    // glm_translate(transform, translation_vec);
+
     while (running) {
+        last_time = now_time;
+        now_time = SDL_GetPerformanceCounter();
+
         while (SDL_PollEvent(&event) > 0) {
             if (event.type == SDL_WINDOWEVENT) {
                 switch (event.window.event) {
@@ -247,11 +263,24 @@ int main(int argc, char *argv[])
             }
         }
 
+        dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
+
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        mat4 stub = {};
+        vec3 axis = { 0.0f, 0.0f, 1.0f };
+        glm_mat4_copy(transform, stub);
+        const f64 sinme = (f64)SDL_GetTicks()/1000.0 + 0.5f;
+        f32 scale_factor = sinf(sinme);
+        vec3 scale = { scale_factor, scale_factor, scale_factor };
+        glm_scale(stub, scale);
+        glm_rotate(stub, 10.0f * dt_secs , axis);
+        glm_rotate(transform, 10.0f * dt_secs , axis);
+
         glBindTexture(GL_TEXTURE_2D, texture);
         sp_use(&shader_program);
+        sp_set_uniform_mat4(&shader_program, "transform", stub);
         {
             glBindVertexArray(shader_program.VAO);
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
