@@ -1,7 +1,11 @@
 #include "cglm/call/io.h"
+#include "cglm/cam.h"
 #include "cglm/io.h"
 #include "cglm/mat4.h"
 #include "cglm/util.h"
+#include "cglm/vec3.h"
+#include "io.h"
+#include <SDL2/SDL_mouse.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,6 +29,7 @@
 #include <stb_image.h>
 
 #include "types.h"
+#include "camera.h"
 
 /* A simple function that prints a message, the error code returned by SDL,
  * and quits the application */
@@ -38,8 +43,7 @@ void checkSDLError(int line)
 {
 #ifndef NDEBUG
 	const char *error = SDL_GetError();
-	if (*error != '\0')
-	{
+	if (*error != '\0') {
 		printf("SDL Error: %s\n", error);
 		if (line != -1)
 			printf(" + line: %i\n", line);
@@ -154,7 +158,15 @@ int main(int argc, char *argv[]) {
     mainwindow = SDL_CreateWindow(PROGRAM_NAME,
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         win_width, win_height,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+        SDL_WINDOW_OPENGL
+        | SDL_WINDOW_SHOWN
+        | SDL_WINDOW_RESIZABLE
+        | SDL_WINDOW_MOUSE_CAPTURE
+        | SDL_WINDOW_INPUT_GRABBED);
+
+    SDL_SetRelativeMouseMode(TRUE);
+
+    SDL_ShowCursor(TRUE);
     if (!mainwindow) /* Die if creation failed */
         sdldie("Unable to create window");
 
@@ -182,12 +194,49 @@ int main(int argc, char *argv[]) {
     // This makes our buffer swap syncronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
 
-    float vertices[] = {
-         0.5f,  0.5f, 0.0f,  1.0f, 1.0f,
-         0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
-        -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
-        -0.5f,  0.5f, 0.0f,  0.0f, 1.0f
-    };
+  float vertices[] = {
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+}; 
 
     u32 indices[] = {
         0, 1, 3, 1, 2, 3
@@ -232,6 +281,7 @@ int main(int argc, char *argv[]) {
 
     glActiveTexture(GL_TEXTURE0);
 
+
     SDL_Event event;
     i32 running = 1;
 
@@ -241,15 +291,25 @@ int main(int argc, char *argv[]) {
 
     mat4 transform = {};
     glm_mat4_identity(transform);
-    // vec3 translation_vec = { 0.4f, 0.2f, 0.0f };
-    // glm_translate(transform, translation_vec);
+    glm_rotate(transform, glm_rad(-55.0f), (vec3) { 1.0f, 0.0f, 0.0f });
+
+    mat4 projection = {};
+    glm_perspective(glm_rad(45.0f), (f32)win_width/(f32)win_height, 0.1f, 100.0f, projection);
+
+    glEnable(GL_DEPTH_TEST);
+
+    vec3 camera_pos = { 0.0f, 0.0f, 3.0f };
+
+    Camera camera;
+    camera_init(&camera, camera_pos);
 
     while (running) {
         last_time = now_time;
         now_time = SDL_GetPerformanceCounter();
 
         while (SDL_PollEvent(&event) > 0) {
-            if (event.type == SDL_WINDOWEVENT) {
+            switch (event.type) {
+            case SDL_WINDOWEVENT: {
                 switch (event.window.event) {
                 case SDL_WINDOWEVENT_RESIZED : {
                     const u32 w = event.window.data1;
@@ -260,30 +320,42 @@ int main(int argc, char *argv[]) {
                     goto quit;
                 }
                 }
+                break;
+            }
+            case SDL_KEYDOWN: 
+                io_change_state(event.key.keysym.sym, TRUE);
+                break;
+            case SDL_KEYUP: 
+                io_change_state(event.key.keysym.sym, FALSE);
+                break;
+            case SDL_MOUSEMOTION:
+                camera_update_direction(&camera, event.motion.xrel, event.motion.yrel);
+                break;
             }
         }
 
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glm_rotate(transform, dt_secs * glm_rad(50.0f), (vec3){0.5f, 1.0f, 0.0f});
 
-        mat4 stub = {};
-        vec3 axis = { 0.0f, 0.0f, 1.0f };
-        glm_mat4_copy(transform, stub);
-        const f64 sinme = (f64)SDL_GetTicks()/1000.0 + 0.5f;
-        f32 scale_factor = sinf(sinme);
-        vec3 scale = { scale_factor, scale_factor, scale_factor };
-        glm_scale(stub, scale);
-        glm_rotate(stub, 10.0f * dt_secs , axis);
-        glm_rotate(transform, 10.0f * dt_secs , axis);
+        camera_update(&camera, dt_secs);
+
+        mat4 view = {};
+        vec3 camera_target = {};
+        glm_vec3_add(camera.pos, camera.front, camera_target);
+        glm_lookat(camera.pos, camera_target, camera.up, view); 
 
         glBindTexture(GL_TEXTURE_2D, texture);
         sp_use(&shader_program);
-        sp_set_uniform_mat4(&shader_program, "transform", stub);
+        sp_set_uniform_mat4(&shader_program, "transform", transform);
+        sp_set_uniform_mat4(&shader_program, "view", view);
+        sp_set_uniform_mat4(&shader_program, "projection", projection);
         {
             glBindVertexArray(shader_program.VAO);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
         }
 
         SDL_GL_SwapWindow(mainwindow);
