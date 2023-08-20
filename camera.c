@@ -1,3 +1,4 @@
+#include <SDL2/SDL_scancode.h>
 #include <cglm/util.h>
 #include <cglm/vec3.h>
 
@@ -38,24 +39,24 @@ void camera_update(Camera *camera, f32 dt) {
 
     // Update camera position
     {
-    if (io_is_key_pressed(SDLK_w)) {
+    if (io_is_key_pressed(SDL_SCANCODE_W)) {
         vec3 camera_front = {};
         glm_vec3_scale(camera->front, camera->speed * dt, camera_front);
         glm_vec3_add(camera->pos, camera_front, camera->pos);
     }
-    if (io_is_key_pressed(SDLK_s)) {
+    if (io_is_key_pressed(SDL_SCANCODE_S)) {
         vec3 camera_front = {};
         glm_vec3_scale(camera->front, camera->speed * dt, camera_front);
         glm_vec3_sub(camera->pos, camera_front, camera->pos);
     }
-    if (io_is_key_pressed(SDLK_d)) {
+    if (io_is_key_pressed(SDL_SCANCODE_D)) {
         vec3 camera_right = {};
         glm_cross(camera->front, camera->up, camera_right);
         glm_normalize(camera_right);
         glm_vec3_scale(camera_right, camera->speed * dt, camera_right);
         glm_vec3_add(camera->pos, camera_right, camera->pos);
     }
-    if (io_is_key_pressed(SDLK_a)) {
+    if (io_is_key_pressed(SDL_SCANCODE_A)) {
         vec3 camera_right = {};
         glm_cross(camera->front, camera->up, camera_right);
         glm_normalize(camera_right);
