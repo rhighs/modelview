@@ -25,6 +25,50 @@
 #include "types.h"
 #include "camera.h"
 
+typedef struct {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+} Material;
+
+Material mat_white_plastic = {
+    {0.0, 0.0, 0.0},
+    {0.55, 0.55, 0.55},
+    {0.70, 0.70, 0.70},
+    0.25
+};
+
+Material mat_chrome = {
+    {0.25, 0.25, 0.25},
+    {0.4, 0.4, 0.4},
+    {0.774597, 0.774597, 0.774597},
+    0.6
+};
+
+Material mat_white_rubber = {
+    {0.05, 0.05, 0.05},
+    {0.5, 0.5, 0.5},
+    {0.7, 0.7, 0.7},
+    0.078125
+};
+
+typedef enum {
+    PLASTIC,
+    METAL,
+    RUBBER,
+} MaterialType;
+
+Material mat_make(Material base_material, vec3 color){
+    Material mat = {};
+
+    glm_vec3_mul(base_material.ambient, color, mat.ambient);
+    glm_vec3_mul(base_material.diffuse, color, mat.diffuse);
+    glm_vec3_mul(base_material.specular, color, mat.specular);
+
+    return mat;
+}
+
 /* A simple function that prints a message, the error code returned by SDL,
  * and quits the application */
 void sdldie(const char *msg) {
@@ -111,8 +155,8 @@ ShaderProgram sp_create(
     glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(vertex_shader, 512, NULL, info_log);
-        fprintf(stderr, "[SHADER_C_ERR] %s: %s\ncontent:%s\n",
-                vert_source_path, info_log, vertex_shader_content);
+        fprintf(stderr, "[SHADER_C_ERR] %s: %s\n\n",
+                vert_source_path, info_log);
     }
 
     const char *fragment_shader_content = read_shader_file(frag_source_path);
@@ -122,8 +166,8 @@ ShaderProgram sp_create(
     glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
     if (!success) {
         glGetShaderInfoLog(fragment_shader, 512, NULL, info_log);
-        fprintf(stderr, "[SHADER_C_ERR] %s: %s\ncontent:%s\n",
-                frag_source_path, info_log, fragment_shader_content);
+        fprintf(stderr, "[SHADER_C_ERR] %s: %s\n\n",
+                frag_source_path, info_log);
     }
 
     const u32 shader_program = glCreateProgram();
@@ -141,10 +185,36 @@ ShaderProgram sp_create(
 
     return (ShaderProgram) { .program = shader_program };
 }
+
+// typedef struct {
+//     Camera *camera;
+// } Renderer;
+// 
+// typedef struct {
+//     mat4 local;
+//     mat4 view;
+//     mat4 projection;
+// } Transform;
+// 
+// typedef struct {
+//     vec3 ambient;
+//     vec3 diffuse;
+//     vec3 specular;
+//     vec3 position;
+// } PointLight;
+// 
+// typedef struct {
+//     vec3 ambient;
+//     vec3 diffuse;
+//     vec3 specular;
+//     vec3 direction;
+// } DirectionalLight;
  
 int main(int argc, char *argv[]) {
     SDL_Window *mainwindow;
     SDL_GLContext maincontext;
+
+    const vec3 CLEAR_COLOR = { .2f, 0.2f, .2f };
 
     const int win_height = 600;
     const int win_width = 800;
@@ -322,7 +392,6 @@ int main(int argc, char *argv[]) {
     // Light coloring and shader stuff
     ShaderProgram light_program = sp_create("./vert.glsl", "./material_frag.glsl");
     vec3 light_color = { 1.0f, 1.0f, 1.0f };
-    vec3 object_color = { 1.0f, 0.5f, 0.31f };
     sp_bind_vao(&light_program, light_VAO);
 
     ShaderProgram light_source_program = sp_create("./vert.glsl", "./light_source_frag.glsl");
@@ -361,7 +430,11 @@ int main(int argc, char *argv[]) {
 
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
 
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(
+                CLEAR_COLOR[0],
+                CLEAR_COLOR[1],
+                CLEAR_COLOR[2],
+                1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glm_rotate(transform, dt_secs * glm_rad(50.0f), (vec3){0.5f, 1.0f, 0.0f});
 
@@ -376,7 +449,7 @@ int main(int argc, char *argv[]) {
         f32 light_z = sin(SDL_GetTicks()/1000.0f) * 1.0f;
         mat4 light_transform;
         glm_mat4_identity(light_transform);
-        vec3 light_position = { light_x, 1.0f, light_z };
+        vec4 light_position = { light_x, 1.0f, light_z, 1.0 };
         glm_translate(light_transform, light_position);
         glm_scale(light_transform, (vec3){ 0.2f, 0.2f, 0.2f });
 
@@ -385,15 +458,20 @@ int main(int argc, char *argv[]) {
         sp_set_uniform_mat4(&light_program, "view", view);
         sp_set_uniform_mat4(&light_program, "projection", projection);
 
-        sp_set_uniform_vec3f(&light_program, "material.ambient", object_color);
-        sp_set_uniform_vec3f(&light_program, "material.diffuse", object_color);
-        sp_set_uniform_vec3f(&light_program, "material.specular", object_color);
-        sp_set_uniform_float(&light_program, "material.shininess", 32.0f);
+        Material material = mat_make(mat_white_rubber, (vec3) { .7f, 0.0f, 0.0f });
+        sp_set_uniform_vec3f(&light_program, "material.ambient",    material.ambient);
+        sp_set_uniform_vec3f(&light_program, "material.diffuse",    material.diffuse);
+        sp_set_uniform_vec3f(&light_program, "material.specular",   material.specular);
+        sp_set_uniform_float(&light_program, "material.shininess",  material.shininess);
         sp_set_uniform_vec3f(&light_program, "eye.position", camera.pos);
-        sp_set_uniform_vec3f(&light_program, "light.ambient", light_color);
-        sp_set_uniform_vec3f(&light_program, "light.diffuse", light_color);
-        sp_set_uniform_vec3f(&light_program, "light.specular", light_color);
-        sp_set_uniform_vec3f(&light_program, "light.position", light_position);
+
+        sp_set_uniform_vec3f(&light_program, "point_lights[0].ambient",     light_color);
+        sp_set_uniform_vec3f(&light_program, "point_lights[0].diffuse",     light_color);
+        sp_set_uniform_vec3f(&light_program, "point_lights[0].specular",    light_color);
+        sp_set_uniform_vec4f(&light_program, "point_lights[0].position",    light_position);
+        sp_set_uniform_float(&light_program, "point_lights[0].constant", 1.0f);
+        sp_set_uniform_float(&light_program, "point_lights[0].linear", 0.08f);
+        sp_set_uniform_float(&light_program, "point_lights[0].quadratic", 0.032f);
         {
             glBindVertexArray(light_program.VAO);
             glDrawArrays(GL_TRIANGLES, 0, 36);
