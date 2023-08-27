@@ -1,4 +1,6 @@
+#include "cglm/vec3.h"
 #include "io.h"
+#include "scene.h"
 #include <SDL2/SDL_mouse.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,12 +27,10 @@
 #include "types.h"
 #include "camera.h"
 
-typedef struct {
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-    float shininess;
-} Material;
+#include "material.h"
+#include "shader.h"
+
+#include "renderer.h"
 
 Material mat_white_plastic = {
     {0.0, 0.0, 0.0},
@@ -105,110 +105,6 @@ char *read_shader_file(const char *filepath) {
 
     return shader_content;
 }
-
-typedef struct {
-    u32 program;
-    u32 VAO;
-} ShaderProgram;
-
-void sp_bind_vao(ShaderProgram *program, const u32 VAO) { program->VAO = VAO; }
-
-void sp_use(ShaderProgram *program) {
-    glUseProgram(program->program);
-}
-
-void sp_set_uniform_vec3f(ShaderProgram *program, const char* uniform,
-        vec3 v) {
-    const i32 uniform_location = glGetUniformLocation(program->program, uniform);
-    glUniform3f(uniform_location, v[0], v[1], v[2]);
-}
-
-void sp_set_uniform_vec4f(ShaderProgram *program, const char* uniform,
-        vec4 v) {
-    const i32 uniform_location = glGetUniformLocation(program->program, uniform);
-    glUniform4f(uniform_location, v[0], v[1], v[2], v[3]);
-}
-
-void sp_set_uniform_mat4(ShaderProgram *program, const char* uniform,
-        const mat4 mat) {
-    const i32 uniform_location = glGetUniformLocation(program->program, uniform);
-    glUniformMatrix4fv(uniform_location, 1, GL_FALSE, (float *)mat);
-}
-
-void sp_set_uniform_float(ShaderProgram *program, const char* uniform,
-        const f32 value) {
-    const i32 uniform_location = glGetUniformLocation(program->program, uniform);
-    glUniform1f(uniform_location, value);
-}
-
-ShaderProgram sp_create(
-        const char *vert_source_path,
-        const char *frag_source_path
-        ) {
-    i32 success;
-    char info_log[512];
-
-    const char *vertex_shader_content = read_shader_file(vert_source_path);
-    const u32 vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_content, NULL);
-    glCompileShader(vertex_shader);
-    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(vertex_shader, 512, NULL, info_log);
-        fprintf(stderr, "[SHADER_C_ERR] %s: %s\n\n",
-                vert_source_path, info_log);
-    }
-
-    const char *fragment_shader_content = read_shader_file(frag_source_path);
-    const u32 fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_content, NULL);
-    glCompileShader(fragment_shader);
-    glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(fragment_shader, 512, NULL, info_log);
-        fprintf(stderr, "[SHADER_C_ERR] %s: %s\n\n",
-                frag_source_path, info_log);
-    }
-
-    const u32 shader_program = glCreateProgram();
-    glAttachShader(shader_program, vertex_shader);
-    glAttachShader(shader_program, fragment_shader);
-    glLinkProgram(shader_program);
-    glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
-    if(!success) {
-        glGetProgramInfoLog(shader_program, 512, NULL, info_log);
-        fprintf(stderr, "[PROGRAM_LINK_ERR]: %s\n", info_log);
-    }
-
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
-
-    return (ShaderProgram) { .program = shader_program };
-}
-
-// typedef struct {
-//     Camera *camera;
-// } Renderer;
-// 
-// typedef struct {
-//     mat4 local;
-//     mat4 view;
-//     mat4 projection;
-// } Transform;
-// 
-// typedef struct {
-//     vec3 ambient;
-//     vec3 diffuse;
-//     vec3 specular;
-//     vec3 position;
-// } PointLight;
-// 
-// typedef struct {
-//     vec3 ambient;
-//     vec3 diffuse;
-//     vec3 specular;
-//     vec3 direction;
-// } DirectionalLight;
  
 int main(int argc, char *argv[]) {
     SDL_Window *mainwindow;
@@ -216,8 +112,8 @@ int main(int argc, char *argv[]) {
 
     const vec3 CLEAR_COLOR = { .2f, 0.2f, .2f };
 
-    const int win_height = 600;
-    const int win_width = 800;
+    u32 win_height = 600;
+    u32 win_width = 800;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) 
         sdldie("Unable to initialize SDL");
@@ -360,19 +256,11 @@ int main(int argc, char *argv[]) {
     u64 last_time = 0;
     f64 dt_secs = 0.0;
 
-    mat4 transform = {};
-    glm_mat4_identity(transform);
-    glm_rotate(transform, glm_rad(-55.0f), (vec3) { 1.0f, 0.0f, 0.0f });
-
-    mat4 projection = {};
-    glm_perspective(glm_rad(45.0f), (f32)win_width/(f32)win_height, 0.1f, 100.0f, projection);
-
     glEnable(GL_DEPTH_TEST);
 
     vec3 camera_pos = { 0.0f, 0.0f, 3.0f };
 
     Camera camera;
-    camera_init(&camera, camera_pos);
 
     // VAO data for light source object
     u32 light_VAO;
@@ -391,11 +279,47 @@ int main(int argc, char *argv[]) {
 
     // Light coloring and shader stuff
     ShaderProgram light_program = sp_create("./vert.glsl", "./material_frag.glsl");
-    vec3 light_color = { 1.0f, 1.0f, 1.0f };
     sp_bind_vao(&light_program, light_VAO);
 
-    ShaderProgram light_source_program = sp_create("./vert.glsl", "./light_source_frag.glsl");
-    sp_bind_vao(&light_source_program, light_VAO);
+    // ShaderProgram light_source_program = sp_create("./vert.glsl", "./light_source_frag.glsl");
+    // sp_bind_vao(&light_source_program, light_VAO);
+
+    Material material = mat_make(mat_white_rubber, (vec3) { .7f, 0.0f, 0.0f });
+
+    RenderMe rme;
+    rme.transform = (Transform *)malloc(sizeof(Transform));
+    rme.mesh = (Mesh *)malloc(sizeof(Mesh));
+    rme.mesh->indices = NULL;
+    rme.mesh->vertices = vertices;
+    rme.mesh->vertex_count = 36;
+    rme.vao = light_VAO;
+    rme.material = &material;
+
+    glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, rme.transform->rotation);
+    glm_vec3_copy((vec3) { 1.0f, 0.0f, 0.0f }, rme.transform->translation);
+    glm_vec3_copy((vec3) { 1.3f, 1.0f, 1.0f }, rme.transform->scale);
+
+    Renderer renderer;
+    renderer.camera = &camera;
+    renderer.program = &light_program;
+    renderer.vp_width = win_width;
+    renderer.vp_height = win_height;
+    camera_init(renderer.camera, camera_pos);
+
+    f32 light_x = cos(SDL_GetTicks()/1000.0f) * 1.0f;
+    f32 light_z = sin(SDL_GetTicks()/1000.0f) * 1.0f;
+
+    vec4 light_position = { light_x, 1.0f, light_z };
+    vec3 light_color = { 1.0f, 1.0f, 1.0f };
+
+    PointLight main_light = pt_light_make(light_position, light_color, light_color, light_color);
+
+    PointLight light_array[] = { main_light };
+    PointLight *lights = light_array;
+
+    Scene main_scene;
+    main_scene.dir_light = NULL;
+    main_scene.pt_lights = &lights;
 
     while (running) {
         last_time = now_time;
@@ -408,6 +332,10 @@ int main(int argc, char *argv[]) {
                 case SDL_WINDOWEVENT_RESIZED : {
                     const u32 w = event.window.data1;
                     const u32 h = event.window.data2;
+                    win_width = w;
+                    win_height = h;
+                    renderer.vp_width= w;
+                    renderer.vp_height = h;
                     glViewport(0, 0, w, h);
                 }
                 case SDL_WINDOWEVENT_CLOSE: {
@@ -423,12 +351,13 @@ int main(int argc, char *argv[]) {
                 io_change_state(event.key.keysym.scancode, FALSE);
                 break;
             case SDL_MOUSEMOTION:
-                camera_update_direction(&camera, event.motion.xrel, event.motion.yrel);
+                camera_update_direction(renderer.camera, event.motion.xrel, event.motion.yrel);
                 break;
             }
         }
 
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
+        camera_update(renderer.camera, dt_secs);
 
         glClearColor(
                 CLEAR_COLOR[0],
@@ -436,56 +365,8 @@ int main(int argc, char *argv[]) {
                 CLEAR_COLOR[2],
                 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glm_rotate(transform, dt_secs * glm_rad(50.0f), (vec3){0.5f, 1.0f, 0.0f});
 
-        camera_update(&camera, dt_secs);
-
-        mat4 view = {};
-        vec3 camera_target = {};
-        glm_vec3_add(camera.pos, camera.front, camera_target);
-        glm_lookat(camera.pos, camera_target, camera.up, view); 
-
-        f32 light_x = cos(SDL_GetTicks()/1000.0f) * 1.0f;
-        f32 light_z = sin(SDL_GetTicks()/1000.0f) * 1.0f;
-        mat4 light_transform;
-        glm_mat4_identity(light_transform);
-        vec4 light_position = { light_x, 1.0f, light_z, 1.0 };
-        glm_translate(light_transform, light_position);
-        glm_scale(light_transform, (vec3){ 0.2f, 0.2f, 0.2f });
-
-        sp_use(&light_program);
-        sp_set_uniform_mat4(&light_program, "transform", transform);
-        sp_set_uniform_mat4(&light_program, "view", view);
-        sp_set_uniform_mat4(&light_program, "projection", projection);
-
-        Material material = mat_make(mat_white_rubber, (vec3) { .7f, 0.0f, 0.0f });
-        sp_set_uniform_vec3f(&light_program, "material.ambient",    material.ambient);
-        sp_set_uniform_vec3f(&light_program, "material.diffuse",    material.diffuse);
-        sp_set_uniform_vec3f(&light_program, "material.specular",   material.specular);
-        sp_set_uniform_float(&light_program, "material.shininess",  material.shininess);
-        sp_set_uniform_vec3f(&light_program, "eye.position", camera.pos);
-
-        sp_set_uniform_vec3f(&light_program, "point_lights[0].ambient",     light_color);
-        sp_set_uniform_vec3f(&light_program, "point_lights[0].diffuse",     light_color);
-        sp_set_uniform_vec3f(&light_program, "point_lights[0].specular",    light_color);
-        sp_set_uniform_vec4f(&light_program, "point_lights[0].position",    light_position);
-        sp_set_uniform_float(&light_program, "point_lights[0].constant", 1.0f);
-        sp_set_uniform_float(&light_program, "point_lights[0].linear", 0.08f);
-        sp_set_uniform_float(&light_program, "point_lights[0].quadratic", 0.032f);
-        {
-            glBindVertexArray(light_program.VAO);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
-
-        sp_use(&light_source_program);
-        sp_set_uniform_mat4(&light_source_program, "transform", light_transform);
-        sp_set_uniform_mat4(&light_source_program, "view", view);
-        sp_set_uniform_mat4(&light_source_program, "projection", projection);
-        sp_set_uniform_vec3f(&light_source_program, "light_color", light_color);
-        {
-            glBindVertexArray(light_source_program.VAO);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        rdr_draw(&renderer, &main_scene, &rme);
 
         SDL_GL_SwapWindow(mainwindow);
     }
