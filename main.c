@@ -299,6 +299,19 @@ int main(int argc, char *argv[]) {
     glm_vec3_copy((vec3) { 1.0f, 0.0f, 0.0f }, rme.transform->translation);
     glm_vec3_copy((vec3) { 1.3f, 1.0f, 1.0f }, rme.transform->scale);
 
+    RenderMe rme_1;
+    rme_1.transform = (Transform *)malloc(sizeof(Transform));
+    rme_1.mesh = (Mesh *)malloc(sizeof(Mesh));
+    rme_1.mesh->indices = NULL;
+    rme_1.mesh->vertices = vertices;
+    rme_1.mesh->vertex_count = 36;
+    rme_1.vao = light_VAO;
+    rme_1.material = &material;
+
+    glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, rme_1.transform->rotation);
+    glm_vec3_copy((vec3) { 5.0f, 0.0f, 0.0f }, rme_1.transform->translation);
+    glm_vec3_copy((vec3) { 1.3f, 1.0f, 1.0f }, rme_1.transform->scale);
+
     Renderer renderer;
     renderer.camera = &camera;
     renderer.program = &light_program;
@@ -309,17 +322,16 @@ int main(int argc, char *argv[]) {
     f32 light_x = cos(SDL_GetTicks()/1000.0f) * 1.0f;
     f32 light_z = sin(SDL_GetTicks()/1000.0f) * 1.0f;
 
-    vec4 light_position = { light_x, 1.0f, light_z };
+    vec3 light_position = { light_x, 4.0f, light_z };
     vec3 light_color = { 1.0f, 1.0f, 1.0f };
 
     PointLight main_light = pt_light_make(light_position, light_color, light_color, light_color);
-
-    PointLight light_array[] = { main_light };
-    PointLight *lights = light_array;
+    DirectionalLight dir_light = dir_light_make((vec3) { -0.5, -0.5, -0.5 }, light_color, light_color, light_color);
 
     Scene main_scene;
     main_scene.dir_light = NULL;
-    main_scene.pt_lights = &lights;
+    main_scene.pt_lights = (PointLight **)malloc(sizeof(PointLight *) * 10);
+    main_scene.pt_lights[0] = &main_light;
 
     while (running) {
         last_time = now_time;
@@ -359,6 +371,8 @@ int main(int argc, char *argv[]) {
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
         camera_update(renderer.camera, dt_secs);
 
+        rme_1.transform->rotation[1] += 10.0 * dt_secs;
+
         glClearColor(
                 CLEAR_COLOR[0],
                 CLEAR_COLOR[1],
@@ -367,6 +381,7 @@ int main(int argc, char *argv[]) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         rdr_draw(&renderer, &main_scene, &rme);
+        rdr_draw(&renderer, &main_scene, &rme_1);
 
         SDL_GL_SwapWindow(mainwindow);
     }

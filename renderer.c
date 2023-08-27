@@ -47,6 +47,14 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
         sp_set_uniform_float(renderer->program, "point_lights[0].quadratic",   lights[0].att_quadratic);
     }
 
+    if (scene->dir_light != NULL) {
+        DirectionalLight dir_light = *(scene->dir_light);
+        sp_set_uniform_vec3f(renderer->program, "dir_light.ambient",     dir_light.ambient);
+        sp_set_uniform_vec3f(renderer->program, "dir_light.diffuse",     dir_light.diffuse);
+        sp_set_uniform_vec3f(renderer->program, "dir_light.specular",    dir_light.specular);
+        sp_set_uniform_vec4f(renderer->program, "dir_light.direction",   dir_light.direction);
+    }
+
     sp_set_uniform_vec3f(renderer->program, "eye.position", renderer->camera->pos);
 
     glBindVertexArray(renderme->vao);

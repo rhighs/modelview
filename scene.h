@@ -31,6 +31,8 @@ typedef struct {
     DirectionalLight *dir_light;
 } Scene;
 
-PointLight pt_light_make(vec4 position, vec3 ambient, vec3 diffuse, vec3 specular);
+PointLight pt_light_make(vec3 position, vec3 ambient, vec3 diffuse, vec3 specular);
+
+DirectionalLight dir_light_make(vec3 direction, vec3 ambient, vec3 diffuse, vec3 specular);
 
 #endif // LIGHT_H
