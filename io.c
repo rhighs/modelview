@@ -22,3 +22,23 @@ void io_change_state(SDL_Scancode code, const b8 pressed) {
     assert((u32)code < SDL_NUM_SCANCODES);
     __PRESSED_KEYS[code] = pressed;
 }
+
+u32 io_read_file(const char* filepath, char **buf_ptr) {
+#ifdef MDEBUG
+    fprintf(stdout, "[%s:%d] reading file: %s\n",
+            __FUNCTION__, __LINE__, filepath);
+#endif
+    FILE *file = fopen(filepath, "r");
+    fseek(file, 0, SEEK_END);
+    u32 filesize = ftell(file);
+    rewind(file);
+
+    *buf_ptr = (char *)malloc(filesize+1);
+    if (!fread(*buf_ptr, sizeof(char), filesize, file)) {
+        fprintf(stderr, "Could not read file: %s\n", filepath);
+        *buf_ptr = NULL;
+        return 0;
+    }
+
+    return filesize;
+}

@@ -84,7 +84,7 @@ float compute_light_attenuation(PointLight light) {
 
 vec3 compute_point_light(PointLight light, vec3 normal) {
     // ambient
-    vec3 ambient = light.ambient * material.ambient;
+    vec3 ambient = light.ambient * material.ambient * 2.0;
 
     // diffuse
     vec3 light_direction = normalize(vec3(light.position) - frag_pos);

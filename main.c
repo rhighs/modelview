@@ -65,6 +65,7 @@ Material mat_make(Material base_material, vec3 color){
     glm_vec3_mul(base_material.ambient, color, mat.ambient);
     glm_vec3_mul(base_material.diffuse, color, mat.diffuse);
     glm_vec3_mul(base_material.specular, color, mat.specular);
+    mat.shininess = base_material.shininess;
 
     return mat;
 }
@@ -322,11 +323,21 @@ int main(int argc, char *argv[]) {
     f32 light_x = cos(SDL_GetTicks()/1000.0f) * 1.0f;
     f32 light_z = sin(SDL_GetTicks()/1000.0f) * 1.0f;
 
-    vec3 light_position = { light_x, 4.0f, light_z };
+    vec3 light_position = { light_x, 1.0f, light_z };
     vec3 light_color = { 1.0f, 1.0f, 1.0f };
 
     PointLight main_light = pt_light_make(light_position, light_color, light_color, light_color);
     DirectionalLight dir_light = dir_light_make((vec3) { -0.5, -0.5, -0.5 }, light_color, light_color, light_color);
+
+    // Reading model data
+    {
+        char *model_data = NULL;
+        const u32 content_len = io_read_file("./chicken.obj", &model_data);
+        if (model_data == NULL) {
+            fprintf(stderr, "Error reading file data\n");
+            return -1;
+        }
+    }
 
     Scene main_scene;
     main_scene.dir_light = NULL;
@@ -372,6 +383,10 @@ int main(int argc, char *argv[]) {
         camera_update(renderer.camera, dt_secs);
 
         rme_1.transform->rotation[1] += 10.0 * dt_secs;
+
+        // Test: oscillating light position
+        main_scene.pt_lights[0]->position[0]
+            = (1 + sin(((f64)SDL_GetTicks64())/1000.0)) * 2.0;
 
         glClearColor(
                 CLEAR_COLOR[0],

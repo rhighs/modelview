@@ -9,4 +9,6 @@ b8 io_is_key_pressed(SDL_Scancode code);
 
 void io_change_state(SDL_Scancode code, b8 pressed);
 
+u32 io_read_file(const char *path, char **buf_ptr);
+
 #endif // IO_H
