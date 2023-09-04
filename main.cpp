@@ -3,6 +3,7 @@
 #include "io.h"
 #include "scene.h"
 #include <SDL2/SDL_mouse.h>
+#include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -90,6 +91,107 @@ void checkSDLError(int line)
 		SDL_ClearError();
 	}
 #endif
+}
+
+#include "array.h"
+
+struct FaceVertex {
+    u32 vertex_id;
+    u32 tex_coord_id;
+    u32 normal_id;
+};
+
+struct Model {
+    Array<f32> vertices;
+    Array<f32> normals;
+    Array<f32> tex_coords;
+    Array<u32> indices;
+    Array<Array<FaceVertex>> faces;
+};
+
+void wf_parse_f32_values(Array<f32> *dst, const char *from) {
+    u32 i = 0;
+    u32 line_length = strlen(from);
+    while (i < line_length) {
+        Array<char> number_str;
+        array_init(&number_str, 32);
+
+        while (from[i] != ' ' && i != line_length)
+            array_push(&number_str, from[i++]);
+
+        f32 value = atof(number_str.data);
+        array_push(dst, value);
+
+        if (from[i] == ' ') i++;
+    }
+}
+
+void wf_parse_face_data(Array<Array<FaceVertex>> *dst, const char *from) {
+    const u32 line_length = strlen(from);
+    u32 i = 0;
+
+    Array<FaceVertex> face_vertices;
+    array_init(&face_vertices, 4);
+    while (i < line_length) {
+        Array<char> number_str;
+        array_init(&number_str, 16);
+
+        // parse triplet x/x/x
+        FaceVertex fv;
+        for (u32 j=0; j<3; j++) {
+            for (; from[i] != '/' && from[i] != ' ' && i < line_length; i++)
+                array_push(&number_str, from[i]);
+
+            const u32 value = atoi(number_str.data);
+            if (j==0)       fv.vertex_id = value;
+            else if (j==1)  fv.tex_coord_id = value;
+            else if (j==2)  fv.normal_id = value;
+
+            i++;
+        }
+
+        array_push(&face_vertices, fv);
+        i++; // skip ' '
+    }
+
+    array_push(dst, face_vertices);
+}
+
+void load_wf_obj_model(const char *path, Model *dst) {
+    array_init(&(dst->vertices),    32);
+    array_init(&(dst->normals),     32);
+    array_init(&(dst->tex_coords),  32);
+    array_init(&(dst->indices),     32);
+    array_init(&(dst->faces),       32);
+
+    char *content = NULL;
+    u32 len = io_read_file(path, (u8 **)&content);
+
+    if (content == NULL) {
+        fprintf(stderr, "[%s:%s:%d]: Error reading file: %s\n",
+                __FILE__, __FUNCTION__, __LINE__, path);
+        exit(1);
+    }
+
+    for (u32 i=0; i<len; i++) {
+        Array<char> line;
+        array_init_with(&line, '\0', 32);
+        for (; content[i] != '\n'; i++)
+            array_push(&line, content[i]);
+
+        switch (line.data[0]) {
+        case 'v':
+            switch(line.data[1]) {
+            case ' ': wf_parse_f32_values(&dst->vertices, line.data + 2); break;
+            case 't': wf_parse_f32_values(&dst->tex_coords, line.data + 3); break;
+            case 'n': wf_parse_f32_values(&dst->normals, line.data + 3); break;
+            }
+        case 'f':
+            wf_parse_face_data(&dst->faces, line.data + 2);
+            break;
+            // material stuff here
+        }
+    }
 }
 
 char *read_shader_file(const char *filepath) {
@@ -288,12 +390,15 @@ int main(int argc, char *argv[]) {
 
     Material material = mat_make(mat_white_rubber, (vec3) { .7f, 0.0f, 0.0f });
 
+    Model mymodel;
+    load_wf_obj_model("./chicken.obj", &mymodel);
+
     RenderMe rme;
     rme.transform = (Transform *)malloc(sizeof(Transform));
     rme.mesh = (Mesh *)malloc(sizeof(Mesh));
     rme.mesh->indices = NULL;
-    rme.mesh->vertices = vertices;
-    rme.mesh->vertex_count = 36;
+    rme.mesh->vertices = mymodel.vertices.data;
+    rme.mesh->vertex_count = mymodel.vertices.len;
     rme.vao = light_VAO;
     rme.material = &material;
 
@@ -332,7 +437,7 @@ int main(int argc, char *argv[]) {
 
     // Reading model data
     {
-        char *model_data = NULL;
+        u8 *model_data = NULL;
         const u32 content_len = io_read_file("./chicken.obj", &model_data);
         if (model_data == NULL) {
             fprintf(stderr, "Error reading file data\n");
