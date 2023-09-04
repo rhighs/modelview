@@ -1,3 +1,4 @@
+#include "build/SDL/include/SDL2/SDL_mouse.h"
 #include "cglm/vec3.h"
 #include "io.h"
 #include "scene.h"
@@ -137,7 +138,7 @@ int main(int argc, char *argv[]) {
         | SDL_WINDOW_MOUSE_CAPTURE
         | SDL_WINDOW_INPUT_GRABBED);
 
-    SDL_SetRelativeMouseMode(TRUE);
+    SDL_SetRelativeMouseMode((SDL_bool)TRUE);
 
     SDL_ShowCursor(TRUE);
     if (!mainwindow) /* Die if creation failed */
