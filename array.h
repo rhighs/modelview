@@ -10,7 +10,7 @@
 
 template<typename T>
 struct Array {
-    T* operator[](u32 index);
+    T operator[](u32 index);
 
     T *data;
     u32 capacity;
@@ -18,9 +18,9 @@ struct Array {
 };
 
 template <typename T>
-T* Array<T>::operator[](u32 index) {
+T Array<T>::operator[](u32 index) {
     assert(index < len && "Array out of bounds access");
-    return &(data[index]);
+    return data[index];
 }
 
 template<typename T>
@@ -72,7 +72,7 @@ void array_push(Array<T> *arr, T value) {
         array_realloc(arr);
     }
     arr->len++;
-    *((*arr)[arr->len-1]) = value;
+    arr->data[arr->len-1] = value;
 }
 
 template<typename T>

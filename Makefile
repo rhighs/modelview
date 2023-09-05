@@ -13,7 +13,7 @@ all: SDL glad
 	$(CXX) $(CXXFLAGS) $(SOURCE) $(OBJ) $(LDPATHS) $(INCLUDE) $(LDFLAGS) -o $(PROG)
 
 dbg: SDL glad
-	$(CXX) $(CXXFLAGS) -g -DMDEBUG $(SOURCE) $(OBJ) $(LDPATHS) $(INCLUDE) $(LDFLAGS) -o $(PROG)
+	$(CXX) $(CXXFLAGS) -g -DMDEBUG $(SOURCE) $(OBJ) $(LDPATHS) $(INCLUDE) $(LDFLAGS) -o $(PROG) $(EXTRA)
 
 # builds SDL using cmake...
 SDL: ensure-build

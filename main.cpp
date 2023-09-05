@@ -3,6 +3,7 @@
 #include "io.h"
 #include "scene.h"
 #include <SDL2/SDL_mouse.h>
+#include <cctype>
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,52 +110,59 @@ struct Model {
     Array<Array<FaceVertex>> faces;
 };
 
-void wf_parse_f32_values(Array<f32> *dst, const char *from) {
+u32 wf_parse_f32_values(Array<f32> *dst, const char *from) {
     u32 i = 0;
     u32 line_length = strlen(from);
+    u32 added = 0;
+
     while (i < line_length) {
         Array<char> number_str;
-        array_init(&number_str, 32);
+        array_init_with(&number_str, '\0', 64);
+        if (added == 3) {
+            printf("VALUE = %s %d %d\n", from, i, line_length);
+        }
 
-        while (from[i] != ' ' && i != line_length)
-            array_push(&number_str, from[i++]);
+        for (; i < line_length; i++) {
+            if (from[i] == ' ') break;
+            array_push(&number_str, from[i]);
+        }
+
 
         f32 value = atof(number_str.data);
         array_push(dst, value);
+        added++;
 
         if (from[i] == ' ') i++;
     }
+
+    return added;
 }
 
 void wf_parse_face_data(Array<Array<FaceVertex>> *dst, const char *from) {
-    const u32 line_length = strlen(from);
-    u32 i = 0;
-
-    Array<FaceVertex> face_vertices;
-    array_init(&face_vertices, 4);
-    while (i < line_length) {
-        Array<char> number_str;
-        array_init(&number_str, 16);
-
-        // parse triplet x/x/x
-        FaceVertex fv;
-        for (u32 j=0; j<3; j++) {
-            for (; from[i] != '/' && from[i] != ' ' && i < line_length; i++)
+    const u32 line_len = strlen(from);
+    Array<FaceVertex> result;
+    array_init(&result, 4);
+    for (u32 i=0; i<line_len;) {
+        FaceVertex face_vertex;
+        for (u32 iter=0; iter<3; iter++) {
+            Array<char> number_str;
+            array_init_with(&number_str, '\0', 32);
+            while (from[i] == ' ' || from[i] == '/') i++;
+            for (; from[i] != ' ' && from[i] != '/' && i < line_len; i++) {
                 array_push(&number_str, from[i]);
+            }
 
             const u32 value = atoi(number_str.data);
-            if (j==0)       fv.vertex_id = value;
-            else if (j==1)  fv.tex_coord_id = value;
-            else if (j==2)  fv.normal_id = value;
 
-            i++;
+            if (value == 0) printf("value = %d (str= %s, iter= %d, till_str= %s)\n", value, number_str.data, iter, from+i);
+
+            if (iter==0) face_vertex.vertex_id = value;
+            else if (iter==1) face_vertex.tex_coord_id = value;
+            else if (iter==2) face_vertex.normal_id = value;
         }
-
-        array_push(&face_vertices, fv);
-        i++; // skip ' '
+        array_push(&result, face_vertex);
     }
-
-    array_push(dst, face_vertices);
+    array_push(dst, result);
 }
 
 void load_wf_obj_model(const char *path, Model *dst) {
@@ -174,8 +182,11 @@ void load_wf_obj_model(const char *path, Model *dst) {
     }
 
     for (u32 i=0; i<len; i++) {
+        u32 line_len = 0;
+        for (; content[i+line_len]!='\n'; line_len++);
+
         Array<char> line;
-        array_init_with(&line, '\0', 32);
+        array_init_with(&line, '\0', line_len+1);
         for (; content[i] != '\n'; i++)
             array_push(&line, content[i]);
 
@@ -186,12 +197,56 @@ void load_wf_obj_model(const char *path, Model *dst) {
             case 't': wf_parse_f32_values(&dst->tex_coords, line.data + 3); break;
             case 'n': wf_parse_f32_values(&dst->normals, line.data + 3); break;
             }
-        case 'f':
-            wf_parse_face_data(&dst->faces, line.data + 2);
             break;
-            // material stuff here
+        case 'f':
+            wf_parse_face_data(&dst->faces, line.data + 2); break;
         }
     }
+}
+
+// TODO: messy oopsie, fix it -.-"
+Array<f32> model_zip_v_vn(Model *model) {
+    Array<f32> result;
+    array_init(&result, model->faces.len * 3);
+    for (u32 i=0; i<model->faces.len; i++) {
+        Array<FaceVertex> faces = model->faces[i];
+        u32 quad[6] = { 0, 1, 2, 0, 2, 3 };
+
+        for (u32 v_id=0; v_id<(6/(1+(faces.len==3))); v_id+=3) {
+            const u32 v_1 = quad[v_id+0];
+            const u32 v_2 = quad[v_id+1];
+            const u32 v_3 = quad[v_id+2];
+
+            const u32 vertex_id_1 = (faces[v_1].vertex_id - 1) * 3;
+            const u32 normal_id_1 = (faces[v_1].normal_id - 1) * 3;
+            array_push(&result, model->vertices[vertex_id_1+0]);
+            array_push(&result, model->vertices[vertex_id_1+1]);
+            array_push(&result, model->vertices[vertex_id_1+2]);
+            array_push(&result, model->normals[normal_id_1+0]);
+            array_push(&result, model->normals[normal_id_1+1]);
+            array_push(&result, model->normals[normal_id_1+2]);
+
+            const u32 vertex_id_2 = (faces[v_2].vertex_id - 1) * 3;
+            const u32 normal_id_2 = (faces[v_2].normal_id - 1) * 3;
+            array_push(&result, model->vertices[vertex_id_2+0]);
+            array_push(&result, model->vertices[vertex_id_2+1]);
+            array_push(&result, model->vertices[vertex_id_2+2]);
+            array_push(&result, model->normals[normal_id_2+0]);
+            array_push(&result, model->normals[normal_id_2+1]);
+            array_push(&result, model->normals[normal_id_2+2]);
+
+            const u32 vertex_id_3 = (faces[v_3].vertex_id - 1) * 3;
+            const u32 normal_id_3 = (faces[v_3].normal_id - 1) * 3;
+            array_push(&result, model->vertices[vertex_id_3+0]);
+            array_push(&result, model->vertices[vertex_id_3+1]);
+            array_push(&result, model->vertices[vertex_id_3+2]);
+            array_push(&result, model->normals[normal_id_3+0]);
+            array_push(&result, model->normals[normal_id_3+1]);
+            array_push(&result, model->normals[normal_id_3+2]);
+        }
+    }
+
+    return result;
 }
 
 char *read_shader_file(const char *filepath) {
@@ -393,12 +448,14 @@ int main(int argc, char *argv[]) {
     Model mymodel;
     load_wf_obj_model("./chicken.obj", &mymodel);
 
+    auto result = model_zip_v_vn(&mymodel);
+
     RenderMe rme;
     rme.transform = (Transform *)malloc(sizeof(Transform));
     rme.mesh = (Mesh *)malloc(sizeof(Mesh));
     rme.mesh->indices = NULL;
-    rme.mesh->vertices = mymodel.vertices.data;
-    rme.mesh->vertex_count = mymodel.vertices.len;
+    rme.mesh->vertices = result.data;
+    rme.mesh->vertex_count = result.len / 6;
     rme.vao = light_VAO;
     rme.material = &material;
 

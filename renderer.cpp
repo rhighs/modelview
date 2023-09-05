@@ -7,6 +7,10 @@
 #include "camera.h"
 #include "scene.h"
 
+#ifdef RDR_DEBUG
+#include <stdio.h>
+#endif
+
 void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
     sp_use(renderer->program);
 
@@ -59,6 +63,9 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
 
     glBindVertexArray(renderme->vao);
     if (renderme->mesh->indices == NULL) {
+ #ifdef RDR_DEBUG
+        fprintf(stdout, "[%s:%s:%d]: rendering vertex count = %d\n", __FILE__, __FUNCTION__, __LINE__, renderme->mesh->vertex_count);
+ #endif
         glDrawArrays(GL_TRIANGLES, 0, renderme->mesh->vertex_count);
     }
 }
