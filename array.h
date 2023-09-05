@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <stdio.h>
+#include <sys/types.h>
 
 #include "types.h"
 
@@ -85,6 +86,13 @@ T array_pop(Array<T> *arr) {
 template<typename T>
 void array_reset(Array<T> *arr) {
     arr->len = 0;
+}
+
+template<typename T>
+void array_free(Array<T> *arr) {
+    arr->len = 0;
+    arr->capacity = 0;
+    free(arr->data);
 }
 
 #endif

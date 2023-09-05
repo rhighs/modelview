@@ -436,6 +436,24 @@ int main(int argc, char *argv[]) {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(f32)));
     glEnableVertexAttribArray(1);
 
+    Model mymodel;
+    load_wf_obj_model("./chicken.obj", &mymodel);
+    auto result = model_zip_v_vn(&mymodel);
+
+    u32 chicken_VAO;
+    u32 chicken_VBO;
+    glGenBuffers(1, &chicken_VBO);
+    glGenVertexArrays(1, &chicken_VAO);
+
+    glBindVertexArray(chicken_VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, chicken_VBO);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * result.len, result.data, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(f32)));
+    glEnableVertexAttribArray(1);
+
     // Light coloring and shader stuff
     ShaderProgram light_program = sp_create("./vert.glsl", "./material_frag.glsl");
     sp_bind_vao(&light_program, light_VAO);
@@ -445,23 +463,18 @@ int main(int argc, char *argv[]) {
 
     Material material = mat_make(mat_white_rubber, (vec3) { .7f, 0.0f, 0.0f });
 
-    Model mymodel;
-    load_wf_obj_model("./chicken.obj", &mymodel);
-
-    auto result = model_zip_v_vn(&mymodel);
-
     RenderMe rme;
     rme.transform = (Transform *)malloc(sizeof(Transform));
     rme.mesh = (Mesh *)malloc(sizeof(Mesh));
     rme.mesh->indices = NULL;
     rme.mesh->vertices = result.data;
     rme.mesh->vertex_count = result.len / 6;
-    rme.vao = light_VAO;
+    rme.vao = chicken_VAO;
     rme.material = &material;
 
     glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, rme.transform->rotation);
     glm_vec3_copy((vec3) { 1.0f, 0.0f, 0.0f }, rme.transform->translation);
-    glm_vec3_copy((vec3) { 1.3f, 1.0f, 1.0f }, rme.transform->scale);
+    glm_vec3_copy((vec3) { .05f, .05f, .05f }, rme.transform->scale);
 
     RenderMe rme_1;
     rme_1.transform = (Transform *)malloc(sizeof(Transform));
@@ -492,18 +505,8 @@ int main(int argc, char *argv[]) {
     PointLight main_light = pt_light_make(light_position, light_color, light_color, light_color);
     DirectionalLight dir_light = dir_light_make((vec3) { -0.5, -0.5, -0.5 }, light_color, light_color, light_color);
 
-    // Reading model data
-    {
-        u8 *model_data = NULL;
-        const u32 content_len = io_read_file("./chicken.obj", &model_data);
-        if (model_data == NULL) {
-            fprintf(stderr, "Error reading file data\n");
-            return -1;
-        }
-    }
-
     Scene main_scene;
-    main_scene.dir_light = NULL;
+    main_scene.dir_light = &dir_light;
     main_scene.pt_lights = (PointLight **)malloc(sizeof(PointLight *) * 10);
     main_scene.pt_lights[0] = &main_light;
 
