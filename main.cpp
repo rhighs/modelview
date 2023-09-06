@@ -208,41 +208,31 @@ void load_wf_obj_model(const char *path, Model *dst) {
 Array<f32> model_zip_v_vn(Model *model) {
     Array<f32> result;
     array_init(&result, model->faces.len * 3);
+    const u32 quad[15] = {
+        0, 1, 2,
+        0, 2, 3,
+        0, 3, 4,
+        0, 4, 5,
+        0, 5, 6
+    };
+
     for (u32 i=0; i<model->faces.len; i++) {
         Array<FaceVertex> faces = model->faces[i];
-        u32 quad[6] = { 0, 1, 2, 0, 2, 3 };
 
-        for (u32 v_id=0; v_id<(6/(1+(faces.len==3))); v_id+=3) {
-            const u32 v_1 = quad[v_id+0];
-            const u32 v_2 = quad[v_id+1];
-            const u32 v_3 = quad[v_id+2];
+        u32 quad_max = 3;
+        if (faces.len == 4)      quad_max = 6;
+        else if (faces.len == 5) quad_max = 9;
+        else if (faces.len == 6) quad_max = 12;
+        else if (faces.len == 7) quad_max = 15;
 
-            const u32 vertex_id_1 = (faces[v_1].vertex_id - 1) * 3;
-            const u32 normal_id_1 = (faces[v_1].normal_id - 1) * 3;
-            array_push(&result, model->vertices[vertex_id_1+0]);
-            array_push(&result, model->vertices[vertex_id_1+1]);
-            array_push(&result, model->vertices[vertex_id_1+2]);
-            array_push(&result, model->normals[normal_id_1+0]);
-            array_push(&result, model->normals[normal_id_1+1]);
-            array_push(&result, model->normals[normal_id_1+2]);
-
-            const u32 vertex_id_2 = (faces[v_2].vertex_id - 1) * 3;
-            const u32 normal_id_2 = (faces[v_2].normal_id - 1) * 3;
-            array_push(&result, model->vertices[vertex_id_2+0]);
-            array_push(&result, model->vertices[vertex_id_2+1]);
-            array_push(&result, model->vertices[vertex_id_2+2]);
-            array_push(&result, model->normals[normal_id_2+0]);
-            array_push(&result, model->normals[normal_id_2+1]);
-            array_push(&result, model->normals[normal_id_2+2]);
-
-            const u32 vertex_id_3 = (faces[v_3].vertex_id - 1) * 3;
-            const u32 normal_id_3 = (faces[v_3].normal_id - 1) * 3;
-            array_push(&result, model->vertices[vertex_id_3+0]);
-            array_push(&result, model->vertices[vertex_id_3+1]);
-            array_push(&result, model->vertices[vertex_id_3+2]);
-            array_push(&result, model->normals[normal_id_3+0]);
-            array_push(&result, model->normals[normal_id_3+1]);
-            array_push(&result, model->normals[normal_id_3+2]);
+        for (u32 v_id=0; v_id<quad_max; v_id++) {
+            const u32 v = quad[v_id];
+            const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
+            const u32 normal_id = (faces[v].normal_id - 1) * 3;
+            for (u32 component_id=0; component_id<3; component_id++)
+                array_push(&result, model->vertices[vertex_id+component_id]);
+            for (u32 component_id=0; component_id<3; component_id++)
+                array_push(&result, model->normals[normal_id+component_id]);
         }
     }
 
@@ -444,7 +434,14 @@ int main(int argc, char *argv[]) {
 
     Model mymodel;
     load_wf_obj_model("./chicken.obj", &mymodel);
+    printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
+            mymodel.vertices.len,
+            mymodel.normals.len,
+            mymodel.tex_coords.len,
+            mymodel.faces.len);
     auto result = model_zip_v_vn(&mymodel);
+
+    printf("[MODEL_INFO]: no. triangles = %d\n", (result.len/6)/3);
 
     u32 chicken_VAO;
     u32 chicken_VBO;
@@ -467,8 +464,7 @@ int main(int argc, char *argv[]) {
     // ShaderProgram light_source_program = sp_create("./vert.glsl", "./light_source_frag.glsl");
     // sp_bind_vao(&light_source_program, light_VAO);
 
-    Material material = mat_make(mat_white_rubber, (vec3) { .7f, 0.0f, 0.0f });
-
+    Material material = mat_make(mat_white_rubber, (vec3) { 1.f, 1.0f, 1.0f });
     RenderMe rme;
     rme.transform = (Transform *)malloc(sizeof(Transform));
     rme.mesh = (Mesh *)malloc(sizeof(Mesh));
@@ -507,7 +503,7 @@ int main(int argc, char *argv[]) {
 
     glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, debug_box.transform->rotation);
     glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, debug_box.transform->translation);
-    glm_vec3_copy((vec3) { .05f, .05f, .05f },    debug_box.transform->scale);
+    glm_vec3_copy((vec3) { .025f, .025f, .025f }, debug_box.transform->scale);
 
     Renderer renderer;
     renderer.camera = &camera;
@@ -572,6 +568,7 @@ int main(int argc, char *argv[]) {
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
         camera_update(renderer.camera, dt_secs);
 
+        rme.transform->rotation[1] += 100.0 * dt_secs;
         rme_1.transform->rotation[1] += 10.0 * dt_secs;
 
         // Test: oscillating light position
@@ -585,6 +582,7 @@ int main(int argc, char *argv[]) {
                 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // TEMP: debug draw object vertices
         for (u32 i=0; i<mymodel.vertices.len-3; i+=3) {
             glm_vec3_copy((vec3) {
                     mymodel.vertices[i+0] * rme.transform->scale[0],
