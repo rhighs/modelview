@@ -142,9 +142,13 @@ void wf_parse_face_data(Array<Array<FaceVertex>> *dst, const char *from) {
     const u32 line_len = strlen(from);
     Array<FaceVertex> result;
     array_init(&result, 4);
+
+    FaceVertex face_vertex;
+    u32 n_slashes = 0;
+    for (u32 j=0; from[j] != ' '; j++) if (from[j] == '/') n_slashes++;
+
     for (u32 i=0; i<line_len;) {
-        FaceVertex face_vertex;
-        for (u32 iter=0; iter<3; iter++) {
+        for (u32 iter=0; iter<n_slashes+1; iter++) {
             Array<char> number_str;
             array_init_with(&number_str, '\0', 32);
             while (from[i] == ' ' || from[i] == '/') i++;
@@ -153,9 +157,6 @@ void wf_parse_face_data(Array<Array<FaceVertex>> *dst, const char *from) {
             }
 
             const u32 value = atoi(number_str.data);
-
-            if (value == 0) printf("value = %d (str= %s, iter= %d, till_str= %s)\n", value, number_str.data, iter, from+i);
-
             if (iter==0) face_vertex.vertex_id = value;
             else if (iter==1) face_vertex.tex_coord_id = value;
             else if (iter==2) face_vertex.normal_id = value;
@@ -216,6 +217,10 @@ Array<f32> model_zip_v_vn(Model *model) {
         0, 5, 6
     };
 
+    if (model->normals.len == 0) {
+        return {};
+    }
+
     for (u32 i=0; i<model->faces.len; i++) {
         Array<FaceVertex> faces = model->faces[i];
 
@@ -231,8 +236,11 @@ Array<f32> model_zip_v_vn(Model *model) {
             const u32 normal_id = (faces[v].normal_id - 1) * 3;
             for (u32 component_id=0; component_id<3; component_id++)
                 array_push(&result, model->vertices[vertex_id+component_id]);
+
             for (u32 component_id=0; component_id<3; component_id++)
                 array_push(&result, model->normals[normal_id+component_id]);
+            for (u32 component_id=0; component_id<3; component_id++)
+                array_push(&result, 0.0f);
         }
     }
 
@@ -433,7 +441,7 @@ int main(int argc, char *argv[]) {
     glEnableVertexAttribArray(1);
 
     Model mymodel;
-    load_wf_obj_model("./chicken.obj", &mymodel);
+    load_wf_obj_model("./bike.obj", &mymodel);
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,

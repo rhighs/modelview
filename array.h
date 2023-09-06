@@ -95,5 +95,13 @@ void array_free(Array<T> *arr) {
     free(arr->data);
 }
 
+template<typename T>
+u32 array_count(Array<T> *arr, T countme) {
+    u32 result = 0;
+    for (u32 i=0; i<arr->len; i++)
+        if (arr->data[i] == countme) result++;
+    return result;
+}
+
 #endif
 
