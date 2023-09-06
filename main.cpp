@@ -317,13 +317,15 @@ int main(int argc, char *argv[]) {
     SDL_GL_SetSwapInterval(1);
 
     float vertices[] = {
+        // Back quad
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
          0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
          0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
+        // Front quad
         -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
          0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
          0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
@@ -331,33 +333,37 @@ int main(int argc, char *argv[]) {
         -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
         -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
 
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        // Left side quad
         -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
         -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
         -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
         -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
 
+        // Right side quad
          0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
          0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
          0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
          0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
+        // Bottom quad
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
         -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
          0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
          0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
         -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
 
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+        // Top quad
          0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
          0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
         -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
     };
 
     // u32 indices[] = {
@@ -489,6 +495,20 @@ int main(int argc, char *argv[]) {
     glm_vec3_copy((vec3) { 5.0f, 0.0f, 0.0f }, rme_1.transform->translation);
     glm_vec3_copy((vec3) { 1.3f, 1.0f, 1.0f }, rme_1.transform->scale);
 
+    Material debug_material = mat_make(mat_white_rubber, (vec3) { .0f, 0.0f, 1.0f });
+    RenderMe debug_box;
+    debug_box.transform = (Transform *)malloc(sizeof(Transform));
+    debug_box.mesh = (Mesh *)malloc(sizeof(Mesh));
+    debug_box.mesh->indices = NULL;
+    debug_box.mesh->vertices = vertices;
+    debug_box.mesh->vertex_count = 36;
+    debug_box.vao = light_VAO;
+    debug_box.material = &debug_material;
+
+    glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, debug_box.transform->rotation);
+    glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, debug_box.transform->translation);
+    glm_vec3_copy((vec3) { .05f, .05f, .05f },    debug_box.transform->scale);
+
     Renderer renderer;
     renderer.camera = &camera;
     renderer.program = &light_program;
@@ -513,6 +533,10 @@ int main(int argc, char *argv[]) {
     while (running) {
         last_time = now_time;
         now_time = SDL_GetPerformanceCounter();
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW);
 
         while (SDL_PollEvent(&event) > 0) {
             switch (event.type) {
@@ -560,6 +584,16 @@ int main(int argc, char *argv[]) {
                 CLEAR_COLOR[2],
                 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        for (u32 i=0; i<mymodel.vertices.len-3; i+=3) {
+            glm_vec3_copy((vec3) {
+                    mymodel.vertices[i+0] * rme.transform->scale[0],
+                    mymodel.vertices[i+1] * rme.transform->scale[1],
+                    mymodel.vertices[i+2] * rme.transform->scale[2] },
+                    debug_box.transform->translation);
+            glm_vec3_add(debug_box.transform->translation, rme.transform->translation, debug_box.transform->translation);
+            rdr_draw(&renderer, &main_scene, &debug_box);
+        }
 
         rdr_draw(&renderer, &main_scene, &rme);
         rdr_draw(&renderer, &main_scene, &rme_1);
