@@ -367,14 +367,6 @@ int main(int argc, char *argv[]) {
     // u32 indices[] = {
     //     0, 1, 3, 1, 2, 3
     // };
-    // const char *image_path = "./res/mlg.png";
-    // i32 image_width, image_height, nr_channels;
-    // stbi_set_flip_vertically_on_load(1);
-    // u8 *image_data = stbi_load(image_path, &image_width, &image_height, &nr_channels, 0);
-    // if (stbi_failure_reason()) {
-    //     fprintf(stderr, "Failed reading %s reason: %s\n",
-    //             image_path, stbi_failure_reason());
-    // }
     //
     // u32 VAO;
     // glGenVertexArrays(1, &VAO);
@@ -411,6 +403,15 @@ int main(int argc, char *argv[]) {
     // stbi_image_free(image_data);
     //
     // glActiveTexture(GL_TEXTURE0);
+    
+    const char *image_path = "./bike.png";
+    i32 image_width, image_height, nr_channels;
+    stbi_set_flip_vertically_on_load(1);
+    u8 *image_data = stbi_load(image_path, &image_width, &image_height, &nr_channels, 0);
+    if (stbi_failure_reason()) {
+        fprintf(stderr, "Failed reading %s reason: %s\n",
+                image_path, stbi_failure_reason());
+    }
 
     SDL_Event event;
     i32 running = 1;
@@ -466,7 +467,7 @@ int main(int argc, char *argv[]) {
     glEnableVertexAttribArray(1);
 
     // Light coloring and shader stuff
-    ShaderProgram light_program = sp_create("./vert.glsl", "./material_frag.glsl");
+    ShaderProgram light_program = sp_create("./shaders/vert_norm_v.glsl", "./shaders/material_norm_light_f.glsl");
     sp_bind_vao(&light_program, light_VAO);
 
     // ShaderProgram light_source_program = sp_create("./vert.glsl", "./light_source_frag.glsl");
