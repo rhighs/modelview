@@ -408,7 +408,7 @@ int main(int argc, char *argv[]) {
     //
     // glActiveTexture(GL_TEXTURE0);
     
-    const char *image_path = "./bike.png";
+    const char *image_path = "./res/models/bike.png";
     i32 image_width, image_height, nr_channels;
     stbi_set_flip_vertically_on_load(1);
     u8 *image_data = stbi_load(image_path, &image_width, &image_height, &nr_channels, 0);
@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
     glEnableVertexAttribArray(1);
 
     Model mymodel;
-    load_wf_obj_model("./lambo.obj", &mymodel);
+    load_wf_obj_model("./res/models/lambo.obj", &mymodel);
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
