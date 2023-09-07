@@ -1,5 +1,4 @@
-#include "build/SDL/include/SDL2/SDL_mouse.h"
-#include "cglm/vec3.h"
+#include "cglm/util.h"
 #include "io.h"
 #include "scene.h"
 #include <SDL2/SDL_mouse.h>
@@ -143,20 +142,25 @@ void wf_parse_face_data(Array<Array<FaceVertex>> *dst, const char *from) {
     Array<FaceVertex> result;
     array_init(&result, 4);
 
-    FaceVertex face_vertex;
     u32 n_slashes = 0;
     for (u32 j=0; from[j] != ' '; j++) if (from[j] == '/') n_slashes++;
 
+    FaceVertex face_vertex;
     for (u32 i=0; i<line_len;) {
         for (u32 iter=0; iter<n_slashes+1; iter++) {
             Array<char> number_str;
             array_init_with(&number_str, '\0', 32);
             while (from[i] == ' ' || from[i] == '/') i++;
+            if (i >= line_len) break;
             for (; from[i] != ' ' && from[i] != '/' && i < line_len; i++) {
                 array_push(&number_str, from[i]);
             }
 
             const u32 value = atoi(number_str.data);
+
+            if (iter == 0 && value == 0)
+                printf("str= %s, %d\n", number_str.data, i);
+
             if (iter==0) face_vertex.vertex_id = value;
             else if (iter==1) face_vertex.tex_coord_id = value;
             else if (iter==2) face_vertex.normal_id = value;
@@ -217,9 +221,11 @@ Array<f32> model_zip_v_vn(Model *model) {
         0, 5, 6
     };
 
+#if 0
     if (model->normals.len == 0) {
         return {};
     }
+#endif
 
     for (u32 i=0; i<model->faces.len; i++) {
         Array<FaceVertex> faces = model->faces[i];
@@ -233,12 +239,10 @@ Array<f32> model_zip_v_vn(Model *model) {
         for (u32 v_id=0; v_id<quad_max; v_id++) {
             const u32 v = quad[v_id];
             const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
-            const u32 normal_id = (faces[v].normal_id - 1) * 3;
-            for (u32 component_id=0; component_id<3; component_id++)
-                array_push(&result, model->vertices[vertex_id+component_id]);
+            // const u32 normal_id = (faces[v].normal_id - 1) * 3;
 
             for (u32 component_id=0; component_id<3; component_id++)
-                array_push(&result, model->normals[normal_id+component_id]);
+                array_push(&result, model->vertices[vertex_id+component_id]);
             for (u32 component_id=0; component_id<3; component_id++)
                 array_push(&result, 0.0f);
         }
@@ -267,10 +271,10 @@ int main(int argc, char *argv[]) {
     SDL_Window *mainwindow;
     SDL_GLContext maincontext;
 
-    const vec3 CLEAR_COLOR = { .2f, 0.2f, .2f };
+    const vec3 CLEAR_COLOR = { .8f, 0.9f, .8f };
 
-    u32 win_height = 600;
-    u32 win_width = 800;
+    u32 win_height = 720;
+    u32 win_width = 1280;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0) 
         sdldie("Unable to initialize SDL");
@@ -442,7 +446,7 @@ int main(int argc, char *argv[]) {
     glEnableVertexAttribArray(1);
 
     Model mymodel;
-    load_wf_obj_model("./bike.obj", &mymodel);
+    load_wf_obj_model("./lambo.obj", &mymodel);
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
@@ -500,7 +504,7 @@ int main(int argc, char *argv[]) {
     glm_vec3_copy((vec3) { 5.0f, 0.0f, 0.0f }, rme_1.transform->translation);
     glm_vec3_copy((vec3) { 1.3f, 1.0f, 1.0f }, rme_1.transform->scale);
 
-    Material debug_material = mat_make(mat_white_rubber, (vec3) { .0f, 0.0f, 1.0f });
+    Material debug_material = mat_make(mat_white_rubber, (vec3) { 1.0f, 0.0f, 0.0f });
     RenderMe debug_box;
     debug_box.transform = (Transform *)malloc(sizeof(Transform));
     debug_box.mesh = (Mesh *)malloc(sizeof(Mesh));
@@ -555,6 +559,7 @@ int main(int argc, char *argv[]) {
                     renderer.vp_width= w;
                     renderer.vp_height = h;
                     glViewport(0, 0, w, h);
+                    break;
                 }
                 case SDL_WINDOWEVENT_CLOSE: {
                     goto quit;
@@ -563,21 +568,19 @@ int main(int argc, char *argv[]) {
                 break;
             }
             case SDL_KEYDOWN: 
-                io_change_state(event.key.keysym.scancode, TRUE);
-                break;
+                io_change_state(event.key.keysym.scancode, TRUE); break;
             case SDL_KEYUP: 
-                io_change_state(event.key.keysym.scancode, FALSE);
-                break;
+                io_change_state(event.key.keysym.scancode, FALSE); break;
             case SDL_MOUSEMOTION:
-                camera_update_direction(renderer.camera, event.motion.xrel, event.motion.yrel);
-                break;
+                camera_update_direction(renderer.camera, event.motion.xrel, event.motion.yrel); break;
             }
         }
 
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
         camera_update(renderer.camera, dt_secs);
 
-        rme.transform->rotation[1] += 100.0 * dt_secs;
+        const f32 y_rotation = 100.0 * dt_secs;
+        rme.transform->rotation[1] += y_rotation;
         rme_1.transform->rotation[1] += 10.0 * dt_secs;
 
         // Test: oscillating light position
@@ -596,9 +599,14 @@ int main(int argc, char *argv[]) {
             glm_vec3_copy((vec3) {
                     mymodel.vertices[i+0] * rme.transform->scale[0],
                     mymodel.vertices[i+1] * rme.transform->scale[1],
-                    mymodel.vertices[i+2] * rme.transform->scale[2] },
+                    mymodel.vertices[i+2] * rme.transform->scale[2]
+                    },
                     debug_box.transform->translation);
+            glm_vec3_rotate(debug_box.transform->translation, glm_rad(rme.transform->rotation[2]), (vec3){ 0.0f, 0.0f, 1.0f });
+            glm_vec3_rotate(debug_box.transform->translation, glm_rad(rme.transform->rotation[1]), (vec3){ 0.0f, 1.0f, 0.0f });
+            glm_vec3_rotate(debug_box.transform->translation, glm_rad(rme.transform->rotation[0]), (vec3){ 1.0f, 0.0f, 0.0f });
             glm_vec3_add(debug_box.transform->translation, rme.transform->translation, debug_box.transform->translation);
+            glm_vec3_copy(rme.transform->rotation, debug_box.transform->rotation);
             rdr_draw(&renderer, &main_scene, &debug_box);
         }
 
