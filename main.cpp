@@ -31,8 +31,9 @@
 
 #include "material.h"
 #include "shader.h"
-
 #include "renderer.h"
+
+#include "string.h"
 
 Material mat_white_plastic = {
     {0.0, 0.0, 0.0},
@@ -110,63 +111,62 @@ struct Model {
 };
 
 u32 wf_parse_f32_values(Array<f32> *dst, const char *from) {
-    u32 i = 0;
-    u32 line_length = strlen(from);
-    u32 added = 0;
+    String line = string_strip_free(string_from(from));
+    auto values = string_split(line, ' ');
 
-    while (i < line_length) {
-        Array<char> number_str;
-        array_init_with(&number_str, '\0', 64);
-        if (added == 3) {
-            printf("VALUE = %s %d %d\n", from, i, line_length);
-        }
-
-        for (; i < line_length; i++) {
-            if (from[i] == ' ') break;
-            array_push(&number_str, from[i]);
-        }
-
-
-        f32 value = atof(number_str.data);
+    for (u32 i=0; i<values.len; i++) {
+        auto token = values[i];
+        const f32 value = atof(string_c(&token));
         array_push(dst, value);
-        added++;
-
-        if (from[i] == ' ') i++;
     }
 
-    return added;
+    for (u32 i=0; i<values.len; i++) {
+        auto token = values[i];
+        string_free(&token);
+    }
+    array_free(&values);
+
+    return values.len;
 }
 
 void wf_parse_face_data(Array<Array<FaceVertex>> *dst, const char *from) {
-    const u32 line_len = strlen(from);
     Array<FaceVertex> result;
     array_init(&result, 4);
 
-    u32 n_slashes = 0;
-    for (u32 j=0; from[j] != ' '; j++) if (from[j] == '/') n_slashes++;
+    String line = string_from(from);
+    Array<String> defs = string_split(line, ' ');
 
-    FaceVertex face_vertex;
-    for (u32 i=0; i<line_len;) {
-        for (u32 iter=0; iter<n_slashes+1; iter++) {
-            Array<char> number_str;
-            array_init_with(&number_str, '\0', 32);
-            while (from[i] == ' ' || from[i] == '/') i++;
-            if (i >= line_len) break;
-            for (; from[i] != ' ' && from[i] != '/' && i < line_len; i++) {
-                array_push(&number_str, from[i]);
-            }
+    for (u32 i=0; i<defs.len; i++) {
+        FaceVertex face_vertex;
+        Array<String> values = string_split(defs[i], '/');
 
-            const u32 value = atoi(number_str.data);
-
-            if (iter == 0 && value == 0)
-                printf("str= %s, %d\n", number_str.data, i);
-
-            if (iter==0) face_vertex.vertex_id = value;
-            else if (iter==1) face_vertex.tex_coord_id = value;
-            else if (iter==2) face_vertex.normal_id = value;
+        if (values.len == 2) {
+            String vertex_str = values[0];
+            face_vertex.vertex_id = atoi(string_c(&vertex_str));
+            String tex_str = values[1];
+            face_vertex.tex_coord_id = atoi(string_c(&tex_str));
+        } else if (values.len == 3) {
+            String vertex_str = values[0];
+            face_vertex.vertex_id = atoi(string_c(&vertex_str));
+            String tex_str = values[1];
+            face_vertex.tex_coord_id = atoi(string_c(&tex_str));
+            String normal_str = values[2];
+            face_vertex.normal_id = atoi(string_c(&normal_str));
         }
+
+        for (u32 i=0; i<values.len; i++) {
+            auto some_str = values[i];
+            string_free(&some_str);
+        }
+        array_free(&values);
         array_push(&result, face_vertex);
     }
+
+    for (u32 i=0; i<defs.len; i++) {
+        auto some_str = defs[i];
+        string_free(&some_str);
+    }
+    array_free(&defs);
     array_push(dst, result);
 }
 
@@ -408,6 +408,7 @@ int main(int argc, char *argv[]) {
     //
     // glActiveTexture(GL_TEXTURE0);
     
+#if 0
     const char *image_path = "./res/models/bike.png";
     i32 image_width, image_height, nr_channels;
     stbi_set_flip_vertically_on_load(1);
@@ -416,6 +417,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Failed reading %s reason: %s\n",
                 image_path, stbi_failure_reason());
     }
+#endif
 
     SDL_Event event;
     i32 running = 1;
@@ -446,7 +448,7 @@ int main(int argc, char *argv[]) {
     glEnableVertexAttribArray(1);
 
     Model mymodel;
-    load_wf_obj_model("./res/models/lambo.obj", &mymodel);
+    load_wf_obj_model("./res/models/lambo/lambo.obj", &mymodel);
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
