@@ -81,8 +81,7 @@ void sdldie(const char *msg) {
     exit(1);
 }
 
-void checkSDLError(int line)
-{
+void checkSDLError(int line) {
 #ifndef NDEBUG
 	const char *error = SDL_GetError();
 	if (*error != '\0') {
@@ -110,14 +109,16 @@ struct Model {
     Array<Array<FaceVertex>> faces;
 };
 
-u32 wf_parse_f32_values(Array<f32> *dst, const char *from) {
+u32 wf_parse_f32_values(Array<f32> *dst, const char *from, const u32 limit) {
     String line = string_strip_free(string_from(from));
     auto values = string_split(line, ' ');
 
-    for (u32 i=0; i<values.len; i++) {
+    u32 added = 0;
+    for (u32 i=0; i<values.len && added < limit; i++) {
         auto token = values[i];
         const f32 value = atof(string_c(&token));
         array_push(dst, value);
+        added++;
     }
 
     for (u32 i=0; i<values.len; i++) {
@@ -198,15 +199,69 @@ void load_wf_obj_model(const char *path, Model *dst) {
         switch (line.data[0]) {
         case 'v':
             switch(line.data[1]) {
-            case ' ': wf_parse_f32_values(&dst->vertices, line.data + 2); break;
-            case 't': wf_parse_f32_values(&dst->tex_coords, line.data + 3); break;
-            case 'n': wf_parse_f32_values(&dst->normals, line.data + 3); break;
+            case ' ': wf_parse_f32_values(&dst->vertices, line.data + 2, 3); break;
+            case 't': wf_parse_f32_values(&dst->tex_coords, line.data + 3, 2); break;
+            case 'n': wf_parse_f32_values(&dst->normals, line.data + 3, 3); break;
             }
             break;
         case 'f':
             wf_parse_face_data(&dst->faces, line.data + 2); break;
         }
     }
+}
+
+Array<f32> model_zip_v_vn_tex(Model *model) {
+    Array<f32> result;
+    array_init(&result, model->faces.len * 3);
+    const u32 quad[15] = {
+        0, 1, 2,
+        0, 2, 3,
+        0, 3, 4,
+        0, 4, 5,
+        0, 5, 6
+    };
+
+#if 0
+    if (model->normals.len == 0) {
+        return {};
+    }
+#endif
+
+    for (u32 i=0; i<model->faces.len; i++) {
+        Array<FaceVertex> faces = model->faces[i];
+
+        u32 quad_max = 3;
+        if (faces.len == 4)      quad_max = 6;
+        else if (faces.len == 5) quad_max = 9;
+        else if (faces.len == 6) quad_max = 12;
+        else if (faces.len == 7) quad_max = 15;
+
+        for (u32 v_id=0; v_id<quad_max; v_id++) {
+            const u32 v = quad[v_id];
+            const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
+            const u32 normal_id = (faces[v].normal_id - 1) * 3;
+            const u32 tex_coord_id =  (faces[v].tex_coord_id - 1) * 2;
+
+            for (u32 component_id=0; component_id<3; component_id++) {
+                array_push(&result, model->vertices[vertex_id+component_id]);
+            }
+
+            for (u32 component_id=0; component_id<3; component_id++) {
+                if (model->normals.len == 0)
+                    array_push(&result, (f32)0.0f);
+                else
+                    array_push(&result, model->normals[normal_id+component_id]);
+            }
+            for (u32 component_id=0; component_id<2; component_id++) {
+                if (model->tex_coords.len == 0)
+                    array_push(&result, (f32)0.0f);
+                else
+                    array_push(&result, model->tex_coords[tex_coord_id+component_id]);
+            }
+        }
+    }
+
+    return result;
 }
 
 // TODO: messy oopsie, fix it -.-"
@@ -265,6 +320,35 @@ char *read_shader_file(const char *filepath) {
     shader_content[filesize] = '\0';
 
     return shader_content;
+}
+    
+struct LoadedImage {
+    u32 width;
+    u32 height;
+    u32 nchannels;
+    u32 len;
+    u8 *data;
+};
+
+LoadedImage io_read_image_file(const char * image_path) {
+    i32 image_width, image_height, nr_channels;
+    stbi_set_flip_vertically_on_load(1);
+    u8 *image_data = stbi_load(image_path, &image_width, &image_height, &nr_channels, 0);
+
+    if (stbi_failure_reason()) {
+        fprintf(stderr, "Failed reading %s reason: %s\n",
+                image_path, stbi_failure_reason());
+        exit(1);
+    }
+
+    LoadedImage result;
+    result.width = (u32)image_width;
+    result.height = (u32)image_height;
+    result.nchannels = (u32)nr_channels;
+    result.len = (u32)(image_width * image_height);
+    result.data = image_data;
+
+    return result;
 }
  
 int main(int argc, char *argv[]) {
@@ -391,33 +475,25 @@ int main(int argc, char *argv[]) {
 
     // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     // glEnableVertexAttribArray(1);
-
-    // u32 texture;
-    // glGenTextures(1, &texture);
-    // glBindTexture(GL_TEXTURE_2D, texture);
-    // glTexImage2D(
-    //     GL_TEXTURE_2D, 0, GL_RGB,
-    //     image_width, image_height,
-    //     0,
-    //     GL_RGB, GL_UNSIGNED_BYTE, image_data);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //
-    // stbi_image_free(image_data);
-    //
-    // glActiveTexture(GL_TEXTURE0);
     
-#if 0
-    const char *image_path = "./res/models/bike.png";
-    i32 image_width, image_height, nr_channels;
-    stbi_set_flip_vertically_on_load(1);
-    u8 *image_data = stbi_load(image_path, &image_width, &image_height, &nr_channels, 0);
-    if (stbi_failure_reason()) {
-        fprintf(stderr, "Failed reading %s reason: %s\n",
-                image_path, stbi_failure_reason());
-    }
-#endif
+    // auto lambo_diffuse_color_data = io_read_image_file("./res/models/lambo/lambo_diffuse.png");
+    auto lambo_base_color_data = io_read_image_file("./res/models/lambo/lambo.png");
+
+    u32 texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB,
+        lambo_base_color_data.width, lambo_base_color_data.height,
+        0,
+        GL_RGB, GL_UNSIGNED_BYTE, lambo_base_color_data.data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    
+    stbi_image_free(lambo_base_color_data.data);
+    
+    glActiveTexture(GL_TEXTURE0);
 
     SDL_Event event;
     i32 running = 1;
@@ -454,7 +530,7 @@ int main(int argc, char *argv[]) {
             mymodel.normals.len,
             mymodel.tex_coords.len,
             mymodel.faces.len);
-    auto result = model_zip_v_vn(&mymodel);
+    auto result = model_zip_v_vn_tex(&mymodel);
 
     printf("[MODEL_INFO]: no. triangles = %d\n", (result.len/6)/3);
 
@@ -467,19 +543,21 @@ int main(int argc, char *argv[]) {
     glBindBuffer(GL_ARRAY_BUFFER, chicken_VBO);
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * result.len, result.data, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(f32)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(f32)));
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(f32)));
+    glEnableVertexAttribArray(2);
 
     // Light coloring and shader stuff
-    ShaderProgram light_program = sp_create("./shaders/vert_norm_v.glsl", "./shaders/material_norm_light_f.glsl");
+    ShaderProgram light_program = sp_create("./shaders/vert_norm_tex_v.glsl", "./shaders/texture_norm_light_f.glsl");
     sp_bind_vao(&light_program, light_VAO);
 
     // ShaderProgram light_source_program = sp_create("./vert.glsl", "./light_source_frag.glsl");
     // sp_bind_vao(&light_source_program, light_VAO);
 
-    Material material = mat_make(mat_white_rubber, (vec3) { 1.f, 1.0f, 1.0f });
+    Material material = mat_make(mat_white_rubber, (vec3) { 1.f, 0.0f, 0.0f });
     RenderMe rme;
     rme.transform = (Transform *)malloc(sizeof(Transform));
     rme.mesh = (Mesh *)malloc(sizeof(Mesh));
@@ -581,7 +659,7 @@ int main(int argc, char *argv[]) {
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
         camera_update(renderer.camera, dt_secs);
 
-        const f32 y_rotation = 100.0 * dt_secs;
+        const f32 y_rotation = 10.0 * dt_secs;
         rme.transform->rotation[1] += y_rotation;
         rme_1.transform->rotation[1] += 10.0 * dt_secs;
 

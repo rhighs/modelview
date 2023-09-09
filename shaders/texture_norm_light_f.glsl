@@ -105,6 +105,9 @@ vec3 compute_point_light(PointLight light, vec3 normal) {
     return ambient + diffuse + specular;
 }
 
+uniform sampler2D tex;
+in vec2 tex_coords;
+
 void main() {
     vec3 norm = normalize(normal);
     vec3 result = vec3(0.0);

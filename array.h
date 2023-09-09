@@ -103,5 +103,17 @@ u32 array_count(Array<T> *arr, T countme) {
     return result;
 }
 
+template<typename T>
+Array<T> array_zip(Array<T> a, Array<T> b) {
+    Array<T> result;
+    u32 minl = a.len > b.len ? b.len : a.len;
+    array_init(&result, minl * 2);
+    for (u32 i=0; i<minl; i++) {
+        array_push(&result, array_pop(&a));
+        array_push(&result, array_pop(&b));
+    }
+    return result;
+}
+
 #endif
 
