@@ -1,0 +1,2 @@
+re filter=lfs diff=lfs merge=lfs -text
+res/ filter=lfs diff=lfs merge=lfs -text
