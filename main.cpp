@@ -35,6 +35,8 @@
 
 #include "string.h"
 
+#include "renderme.h"
+
 Material mat_white_plastic = {
     {0.0, 0.0, 0.0},
     {0.55, 0.55, 0.55},
@@ -321,34 +323,21 @@ char *read_shader_file(const char *filepath) {
 
     return shader_content;
 }
-    
-struct LoadedImage {
-    u32 width;
-    u32 height;
-    u32 nchannels;
-    u32 len;
-    u8 *data;
-};
 
-LoadedImage io_read_image_file(const char * image_path) {
-    i32 image_width, image_height, nr_channels;
-    stbi_set_flip_vertically_on_load(1);
-    u8 *image_data = stbi_load(image_path, &image_width, &image_height, &nr_channels, 0);
-
-    if (stbi_failure_reason()) {
-        fprintf(stderr, "Failed reading %s reason: %s\n",
-                image_path, stbi_failure_reason());
-        exit(1);
-    }
-
-    LoadedImage result;
-    result.width = (u32)image_width;
-    result.height = (u32)image_height;
-    result.nchannels = (u32)nr_channels;
-    result.len = (u32)(image_width * image_height);
-    result.data = image_data;
-
-    return result;
+u32 bind_texture_info(LoadedImage image) {
+    u32 texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB,
+        image.width, image.height,
+        0,
+        GL_RGB, GL_UNSIGNED_BYTE, image.data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    return texture;
 }
  
 int main(int argc, char *argv[]) {
@@ -476,22 +465,10 @@ int main(int argc, char *argv[]) {
     // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     // glEnableVertexAttribArray(1);
     
-    // auto lambo_diffuse_color_data = io_read_image_file("./res/models/lambo/lambo_diffuse.png");
-    auto lambo_base_color_data = io_read_image_file("./res/models/lambo/lambo.png");
-
-    u32 texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB,
-        lambo_base_color_data.width, lambo_base_color_data.height,
-        0,
-        GL_RGB, GL_UNSIGNED_BYTE, lambo_base_color_data.data);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    
-    stbi_image_free(lambo_base_color_data.data);
+    // auto lambo_base_color_data = io_read_image_file("./res/models/lambo/lambo.png");
+    auto texture_data = io_read_image_file("./res/models/chungus/chungus.png");
+    u32 _texture = bind_texture_info(texture_data);
+    stbi_image_free(texture_data.data);
     
     glActiveTexture(GL_TEXTURE0);
 
@@ -524,7 +501,7 @@ int main(int argc, char *argv[]) {
     glEnableVertexAttribArray(1);
 
     Model mymodel;
-    load_wf_obj_model("./res/models/lambo/lambo.obj", &mymodel);
+    load_wf_obj_model("./res/models/chungus/chungus.obj", &mymodel);
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
@@ -557,7 +534,7 @@ int main(int argc, char *argv[]) {
     // ShaderProgram light_source_program = sp_create("./vert.glsl", "./light_source_frag.glsl");
     // sp_bind_vao(&light_source_program, light_VAO);
 
-    Material material = mat_make(mat_white_rubber, (vec3) { 1.f, 0.0f, 0.0f });
+    Material material = mat_make(mat_white_rubber, (vec3) { 1.f, 1.0f, 1.0f });
     RenderMe rme;
     rme.transform = (Transform *)malloc(sizeof(Transform));
     rme.mesh = (Mesh *)malloc(sizeof(Mesh));
@@ -585,7 +562,13 @@ int main(int argc, char *argv[]) {
     glm_vec3_copy((vec3) { 1.3f, 1.0f, 1.0f }, rme_1.transform->scale);
 
     Material debug_material = mat_make(mat_white_rubber, (vec3) { 1.0f, 0.0f, 0.0f });
-    RenderMe debug_box;
+
+    RenderMe debug_box = rdrme_create(
+        result,
+        RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
+        debug_material,
+        );
+
     debug_box.transform = (Transform *)malloc(sizeof(Transform));
     debug_box.mesh = (Mesh *)malloc(sizeof(Mesh));
     debug_box.mesh->indices = NULL;
@@ -593,10 +576,6 @@ int main(int argc, char *argv[]) {
     debug_box.mesh->vertex_count = 36;
     debug_box.vao = light_VAO;
     debug_box.material = &debug_material;
-
-    glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, debug_box.transform->rotation);
-    glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, debug_box.transform->translation);
-    glm_vec3_copy((vec3) { .025f, .025f, .025f }, debug_box.transform->scale);
 
     Renderer renderer;
     renderer.camera = &camera;
@@ -659,7 +638,7 @@ int main(int argc, char *argv[]) {
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
         camera_update(renderer.camera, dt_secs);
 
-        const f32 y_rotation = 10.0 * dt_secs;
+        const f32 y_rotation = 1000.0 * dt_secs;
         rme.transform->rotation[1] += y_rotation;
         rme_1.transform->rotation[1] += 10.0 * dt_secs;
 

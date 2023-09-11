@@ -10,25 +10,6 @@
 #include "material.h"
 
 typedef struct {
-    u32 vertex_count;
-    u32 *indices;
-    f32 *vertices;
-} Mesh;
-
-typedef struct {
-    vec3 scale;
-    vec3 rotation;
-    vec3 translation;
-} Transform;
-
-typedef struct {
-    Material *material;
-    Transform *transform;
-    Mesh *mesh;
-    u32 vao;
-} RenderMe;
-
-typedef struct {
     Camera *camera;
     ShaderProgram *program;
     u32 vp_width;

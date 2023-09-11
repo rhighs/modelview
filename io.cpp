@@ -1,6 +1,8 @@
 #include <SDL2/SDL_scancode.h>
 #include <assert.h>
 
+#include <stb_image.h>
+
 #include "io.h"
 
 b8 __PRESSED_KEYS[SDL_NUM_SCANCODES] = { FALSE };
@@ -38,3 +40,25 @@ u32 io_read_file(const char* filepath, u8 **buf_ptr) {
 
     return filesize;
 }
+
+LoadedImage io_read_image_file(const char * image_path) {
+    i32 image_width, image_height, nr_channels;
+    stbi_set_flip_vertically_on_load(1);
+    u8 *image_data = stbi_load(image_path, &image_width, &image_height, &nr_channels, 0);
+
+    if (stbi_failure_reason()) {
+        fprintf(stderr, "Failed reading %s reason: %s\n",
+                image_path, stbi_failure_reason());
+        exit(1);
+    }
+
+    LoadedImage result;
+    result.width = (u32)image_width;
+    result.height = (u32)image_height;
+    result.nchannels = (u32)nr_channels;
+    result.len = (u32)(image_width * image_height);
+    result.data = image_data;
+
+    return result;
+}
+
