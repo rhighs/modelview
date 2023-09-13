@@ -8,13 +8,14 @@
 #include "shader.h"
 #include "scene.h"
 #include "material.h"
+#include "renderme.h"
 
-typedef struct {
+struct Renderer {
     Camera *camera;
     ShaderProgram *program;
     u32 vp_width;
     u32 vp_height;
-} Renderer;
+};
 
 void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme);
 

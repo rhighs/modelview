@@ -1,4 +1,5 @@
 #include "renderme.h"
+#include "array.h"
 #include "io.h"
 
 /* If using gl3.h */
@@ -59,8 +60,10 @@ RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material) {
     glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, result.transform.translation);
     glm_vec3_copy((vec3) { 1.0f, 1.0f, 1.0f }, result.transform.scale);
 
-    result.mesh.indices = NULL;
-    result.mesh.vertices = data.data;
+    array_init(&result.mesh.indices, 4);
+
+    // FIXME: ownership is outside!
+    result.mesh.vertices = data;
     result.mesh.vertex_count = data.len / DATA_LINE_LENGTH;
 
     result.material = material;

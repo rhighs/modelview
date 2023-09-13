@@ -3,12 +3,12 @@
 
 #include <cglm/cglm.h>
 
-typedef struct {
+struct Material {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
     float shininess;
-} Material;
+};
 
 #endif // MATERIAL_H
 

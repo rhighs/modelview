@@ -6,10 +6,10 @@
 
 #include "types.h"
 
-typedef struct {
+struct ShaderProgram {
     u32 program;
     u32 VAO;
-} ShaderProgram;
+};
 
 void sp_bind_vao(ShaderProgram *program, const u32 VAO);
 

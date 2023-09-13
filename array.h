@@ -9,9 +9,11 @@
 
 #include "types.h"
 
+#define RAW_ARRAY_LEN(__ARR) (sizeof(__ARR)/sizeof(__ARR[0]))
+
 template<typename T>
 struct Array {
-    T operator[](u32 index);
+    T& operator[](u32 index);
 
     T *data;
     u32 capacity;
@@ -19,7 +21,7 @@ struct Array {
 };
 
 template <typename T>
-T Array<T>::operator[](u32 index) {
+T& Array<T>::operator[](u32 index) {
     assert(index < len && "Array out of bounds access");
     return data[index];
 }
@@ -112,6 +114,16 @@ Array<T> array_zip(Array<T> a, Array<T> b) {
         array_push(&result, array_pop(&a));
         array_push(&result, array_pop(&b));
     }
+    return result;
+}
+
+template<typename T>
+Array<T> array_from_copy(T *data, u32 len) {
+    Array<T> result;
+    result.len = len;
+    const u32 capacity = sizeof(T) * len;
+    result.data = (T *)malloc(capacity);
+    memcpy(result.data, data, len);
     return result;
 }
 

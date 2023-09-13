@@ -1,4 +1,3 @@
-#include "cglm/util.h"
 #include "io.h"
 #include "scene.h"
 #include <SDL2/SDL_mouse.h>
@@ -530,52 +529,27 @@ int main(int argc, char *argv[]) {
     // Light coloring and shader stuff
     ShaderProgram light_program = sp_create("./shaders/vert_norm_tex_v.glsl", "./shaders/texture_norm_light_f.glsl");
     sp_bind_vao(&light_program, light_VAO);
-
-    // ShaderProgram light_source_program = sp_create("./vert.glsl", "./light_source_frag.glsl");
-    // sp_bind_vao(&light_source_program, light_VAO);
-
+    
     Material material = mat_make(mat_white_rubber, (vec3) { 1.f, 1.0f, 1.0f });
-    RenderMe rme;
-    rme.transform = (Transform *)malloc(sizeof(Transform));
-    rme.mesh = (Mesh *)malloc(sizeof(Mesh));
-    rme.mesh->indices = NULL;
-    rme.mesh->vertices = result.data;
-    rme.mesh->vertex_count = result.len / 6;
-    rme.vao = chicken_VAO;
-    rme.material = &material;
 
-    glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, rme.transform->rotation);
-    glm_vec3_copy((vec3) { 1.0f, 0.0f, 0.0f }, rme.transform->translation);
-    glm_vec3_copy((vec3) { .05f, .05f, .05f }, rme.transform->scale);
+    RenderMe rme = rdrme_create(result,
+        RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
+        material);
+    glm_vec3_copy((vec3) { .05f, .05f, .05f }, rme.transform.scale);
 
-    RenderMe rme_1;
-    rme_1.transform = (Transform *)malloc(sizeof(Transform));
-    rme_1.mesh = (Mesh *)malloc(sizeof(Mesh));
-    rme_1.mesh->indices = NULL;
-    rme_1.mesh->vertices = vertices;
-    rme_1.mesh->vertex_count = 36;
-    rme_1.vao = light_VAO;
-    rme_1.material = &material;
+    Array<f32> vertices_arr =
+        array_from_copy(vertices, RAW_ARRAY_LEN(vertices));
 
-    glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, rme_1.transform->rotation);
-    glm_vec3_copy((vec3) { 5.0f, 0.0f, 0.0f }, rme_1.transform->translation);
-    glm_vec3_copy((vec3) { 1.3f, 1.0f, 1.0f }, rme_1.transform->scale);
+    RenderMe rme_1 = rdrme_create(vertices_arr,
+        RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
+        material);
 
     Material debug_material = mat_make(mat_white_rubber, (vec3) { 1.0f, 0.0f, 0.0f });
-
     RenderMe debug_box = rdrme_create(
-        result,
-        RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
-        debug_material,
+        vertices_arr,
+        RDRME_LIGHT | RDRME_NORMAL,
+        debug_material
         );
-
-    debug_box.transform = (Transform *)malloc(sizeof(Transform));
-    debug_box.mesh = (Mesh *)malloc(sizeof(Mesh));
-    debug_box.mesh->indices = NULL;
-    debug_box.mesh->vertices = vertices;
-    debug_box.mesh->vertex_count = 36;
-    debug_box.vao = light_VAO;
-    debug_box.material = &debug_material;
 
     Renderer renderer;
     renderer.camera = &camera;
@@ -590,13 +564,12 @@ int main(int argc, char *argv[]) {
     vec3 light_position = { light_x, 1.0f, light_z };
     vec3 light_color = { 1.0f, 1.0f, 1.0f };
 
-    PointLight main_light = pt_light_make(light_position, light_color, light_color, light_color);
-    DirectionalLight dir_light = dir_light_make((vec3) { -0.5, -0.5, -0.5 }, light_color, light_color, light_color);
+    PointLight main_light = point_light_make(light_position, light_color, light_color, light_color);
+    DirectionalLight dir_light = directional_light_make((vec3) { -0.5, -0.5, -0.5 }, light_color, light_color, light_color);
 
-    Scene main_scene;
-    main_scene.dir_light = &dir_light;
-    main_scene.pt_lights = (PointLight **)malloc(sizeof(PointLight *) * 10);
-    main_scene.pt_lights[0] = &main_light;
+    Scene main_scene = scene_init();
+    scene_add_point_light(&main_scene, main_light);
+    scene_add_directional_light(&main_scene, dir_light);
 
     while (running) {
         last_time = now_time;
@@ -638,13 +611,12 @@ int main(int argc, char *argv[]) {
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
         camera_update(renderer.camera, dt_secs);
 
-        const f32 y_rotation = 1000.0 * dt_secs;
-        rme.transform->rotation[1] += y_rotation;
-        rme_1.transform->rotation[1] += 10.0 * dt_secs;
+        const f32 y_rotation = 10.0 * dt_secs;
+        rme.transform.rotation[1] += y_rotation;
+        rme_1.transform.rotation[1] += 10.0 * dt_secs;
 
         // Test: oscillating light position
-        main_scene.pt_lights[0]->position[0]
-            = (1 + sin(((f64)SDL_GetTicks64())/1000.0)) * 2.0;
+        main_scene.point_lights[0].position[0] = (f32)((1 + sin(((f64)SDL_GetTicks64())/1000.0)) * 2.0);
 
         glClearColor(
                 CLEAR_COLOR[0],
@@ -656,16 +628,16 @@ int main(int argc, char *argv[]) {
         // TEMP: debug draw object vertices
         for (u32 i=0; i<mymodel.vertices.len-3; i+=3) {
             glm_vec3_copy((vec3) {
-                    mymodel.vertices[i+0] * rme.transform->scale[0],
-                    mymodel.vertices[i+1] * rme.transform->scale[1],
-                    mymodel.vertices[i+2] * rme.transform->scale[2]
+                    mymodel.vertices[i+0] * rme.transform.scale[0],
+                    mymodel.vertices[i+1] * rme.transform.scale[1],
+                    mymodel.vertices[i+2] * rme.transform.scale[2]
                     },
-                    debug_box.transform->translation);
-            glm_vec3_rotate(debug_box.transform->translation, glm_rad(rme.transform->rotation[2]), (vec3){ 0.0f, 0.0f, 1.0f });
-            glm_vec3_rotate(debug_box.transform->translation, glm_rad(rme.transform->rotation[1]), (vec3){ 0.0f, 1.0f, 0.0f });
-            glm_vec3_rotate(debug_box.transform->translation, glm_rad(rme.transform->rotation[0]), (vec3){ 1.0f, 0.0f, 0.0f });
-            glm_vec3_add(debug_box.transform->translation, rme.transform->translation, debug_box.transform->translation);
-            glm_vec3_copy(rme.transform->rotation, debug_box.transform->rotation);
+                    debug_box.transform.translation);
+            glm_vec3_rotate(debug_box.transform.translation, glm_rad(rme.transform.rotation[2]), (vec3){ 0.0f, 0.0f, 1.0f });
+            glm_vec3_rotate(debug_box.transform.translation, glm_rad(rme.transform.rotation[1]), (vec3){ 0.0f, 1.0f, 0.0f });
+            glm_vec3_rotate(debug_box.transform.translation, glm_rad(rme.transform.rotation[0]), (vec3){ 1.0f, 0.0f, 0.0f });
+            glm_vec3_add(debug_box.transform.translation, rme.transform.translation, debug_box.transform.translation);
+            glm_vec3_copy(rme.transform.rotation, debug_box.transform.rotation);
             rdr_draw(&renderer, &main_scene, &debug_box);
         }
 

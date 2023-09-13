@@ -1,21 +1,23 @@
 #ifndef RENDERME_H
 #define RENDERME_H
 
+#include <cglm/cglm.h>
+
 #include "types.h"
 #include "array.h"
-#include "renderer.h"
+#include "material.h"
 
-typedef struct {
+struct Mesh {
     u32 vertex_count;
-    u32 *indices;
-    f32 *vertices;
-} Mesh;
+    Array<u32> indices;
+    Array<f32> vertices;
+};
 
-typedef struct {
+struct Transform {
     vec3 scale;
     vec3 rotation;
     vec3 translation;
-} Transform;
+};
 
 typedef u32 RenderMeFlags;
 enum _RenderMeFlags {

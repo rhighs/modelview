@@ -8,7 +8,7 @@
 #define __CAMERA_DEFAULT_SPEED 10.0f
 #define __CAMERA_DEFAULT_SENS 0.1f
 
-typedef struct {
+struct Camera {
     vec3 pos;
     vec3 front;
     vec3 up;
@@ -17,7 +17,7 @@ typedef struct {
     f32 sens;
     f32 yaw;
     f32 pitch;
-} Camera;
+};
 
 void camera_init(Camera *camera, vec3 pos);
 
