@@ -439,8 +439,7 @@ int main(int argc, char *argv[]) {
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
     };
     
-    // auto lambo_base_color_data = io_read_image_file("./res/models/lambo/lambo.png");
-    auto texture_data = io_read_image_file("./res/models/chungus/chungus.png");
+    auto texture_data = io_read_image_file("./res/models/lambo/lambo.png");
     u32 _texture = bind_texture_info(texture_data);
     stbi_image_free(texture_data.data);
     
@@ -459,23 +458,8 @@ int main(int argc, char *argv[]) {
 
     Camera camera;
 
-    // VAO data for light source object
-    u32 light_VAO;
-    u32 VBO;
-    glGenBuffers(1, &VBO);
-    glGenVertexArrays(1, &light_VAO);
-
-    glBindVertexArray(light_VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(f32)));
-    glEnableVertexAttribArray(1);
-
     Model mymodel;
-    load_wf_obj_model("./res/models/chungus/chungus.obj", &mymodel);
+    load_wf_obj_model("./res/models/lambo/lambo.obj", &mymodel);
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
@@ -505,6 +489,11 @@ int main(int argc, char *argv[]) {
         RDRME_LIGHT | RDRME_NORMAL,
         debug_material
         );
+
+    const f32 scale_coeff = 0.05;
+    debug_box.transform.scale[0] = scale_coeff;
+    debug_box.transform.scale[1] = scale_coeff;
+    debug_box.transform.scale[2] = scale_coeff;
 
     Renderer renderer = rdr_init(&camera, win_width, win_height);
     camera_init(renderer.camera, camera_pos);

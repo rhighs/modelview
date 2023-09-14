@@ -26,7 +26,7 @@ Renderer rdr_init(Camera *camera, u32 width, u32 height) {
     
     if (!shaders_loaded) {
         light_tex_program = sp_create("./shaders/vert_norm_tex_v.glsl", "./shaders/texture_norm_light_f.glsl");
-        light_program = sp_create("./shaders/vert_norm_v.glsl", "./shaders/material_norm_light_f.glsl");
+        light_program = sp_create("./shaders/vert_norm_tex_v.glsl", "./shaders/material_norm_light_f.glsl");
         shaders_loaded = TRUE;
     }
 
@@ -96,6 +96,8 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
 
     glBindVertexArray(renderme->vao);
     if (renderme->mesh.indices.len == 0) {
+        // Vertex count is to be intented as the "attribute" unit or whatever.
+        // As a question: how many "vertex shader" calls there will be? vertex_count shader calls
  #ifdef RDR_DEBUG
         fprintf(stdout, "[%s:%s:%d]: rendering vertex count = %d\n", __FILE__, __FUNCTION__, __LINE__, renderme->mesh->vertex_count);
  #endif

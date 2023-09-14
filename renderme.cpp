@@ -74,12 +74,17 @@ RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material) {
         DATA_LINE_LENGTH = 8;
         VAO = __norm_tex_vao(data.data, data.len);
         result.shader_type = SHADER_LIGHT_VNT;
+        IO_LOG(stdout, "using shader = SHADER_LIGHT_VNT", NULL);
     } else {
         // vertex + normals
         DATA_LINE_LENGTH = 6;
         VAO = __norm_vao(data.data, data.len);
         result.shader_type = SHADER_LIGHT_VN;
+        IO_LOG(stdout, "using shader = SHADER_LIGHT_VN", NULL);
     }
+
+    IO_LOG(stdout, "Going to render = ", NULL);
+    array_print(&data);
 
     glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, result.transform.rotation);
     glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, result.transform.translation);
@@ -90,6 +95,8 @@ RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material) {
     // FIXME: ownership is outside!
     result.mesh.vertices = data;
     result.mesh.vertex_count = data.len / DATA_LINE_LENGTH;
+
+    IO_LOG(stdout, "data.len / DATA_LINE_LENGTH = %d", data.len / DATA_LINE_LENGTH);
 
     result.material = material;
     result.vao = VAO;
