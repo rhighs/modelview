@@ -12,10 +12,11 @@
 
 struct Renderer {
     Camera *camera;
-    ShaderProgram *program;
     u32 vp_width;
     u32 vp_height;
 };
+
+Renderer rdr_init(Camera *camera, u32 width, u32 height);
 
 void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme);
 

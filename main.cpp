@@ -265,7 +265,6 @@ Array<f32> model_zip_v_vn_tex(Model *model) {
     return result;
 }
 
-// TODO: messy oopsie, fix it -.-"
 Array<f32> model_zip_v_vn(Model *model) {
     Array<f32> result;
     array_init(&result, model->faces.len * 3);
@@ -439,30 +438,6 @@ int main(int argc, char *argv[]) {
          0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
     };
-
-    // u32 indices[] = {
-    //     0, 1, 3, 1, 2, 3
-    // };
-    //
-    // u32 VAO;
-    // glGenVertexArrays(1, &VAO);
-    //
-    // glBindVertexArray(VAO);
-    // u32 VBO;
-    // u32 EBO; 
-    // glGenBuffers(1, &VBO);
-    // glGenBuffers(1, &EBO);
-    // glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
-    // glEnableVertexAttribArray(0);
-
-    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    // glEnableVertexAttribArray(1);
     
     // auto lambo_base_color_data = io_read_image_file("./res/models/lambo/lambo.png");
     auto texture_data = io_read_image_file("./res/models/chungus/chungus.png");
@@ -510,26 +485,7 @@ int main(int argc, char *argv[]) {
 
     printf("[MODEL_INFO]: no. triangles = %d\n", (result.len/6)/3);
 
-    u32 chicken_VAO;
-    u32 chicken_VBO;
-    glGenBuffers(1, &chicken_VBO);
-    glGenVertexArrays(1, &chicken_VAO);
-
-    glBindVertexArray(chicken_VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, chicken_VBO);
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * result.len, result.data, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(f32)));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6*sizeof(f32)));
-    glEnableVertexAttribArray(2);
-
     // Light coloring and shader stuff
-    ShaderProgram light_program = sp_create("./shaders/vert_norm_tex_v.glsl", "./shaders/texture_norm_light_f.glsl");
-    sp_bind_vao(&light_program, light_VAO);
-    
     Material material = mat_make(mat_white_rubber, (vec3) { 1.f, 1.0f, 1.0f });
 
     RenderMe rme = rdrme_create(result,
@@ -537,11 +493,10 @@ int main(int argc, char *argv[]) {
         material);
     glm_vec3_copy((vec3) { .05f, .05f, .05f }, rme.transform.scale);
 
-    Array<f32> vertices_arr =
-        array_from_copy(vertices, RAW_ARRAY_LEN(vertices));
+    Array<f32> vertices_arr = array_from_copy(vertices, RAW_ARRAY_LEN(vertices));
 
     RenderMe rme_1 = rdrme_create(vertices_arr,
-        RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
+        RDRME_LIGHT | RDRME_NORMAL,
         material);
 
     Material debug_material = mat_make(mat_white_rubber, (vec3) { 1.0f, 0.0f, 0.0f });
@@ -551,11 +506,7 @@ int main(int argc, char *argv[]) {
         debug_material
         );
 
-    Renderer renderer;
-    renderer.camera = &camera;
-    renderer.program = &light_program;
-    renderer.vp_width = win_width;
-    renderer.vp_height = win_height;
+    Renderer renderer = rdr_init(&camera, win_width, win_height);
     camera_init(renderer.camera, camera_pos);
 
     f32 light_x = cos(SDL_GetTicks()/1000.0f) * 1.0f;

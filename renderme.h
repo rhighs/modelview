@@ -28,10 +28,16 @@ enum _RenderMeFlags {
     RDRME_BLANK     = 0x1 << 4,
 };
 
+enum RendermeShaderType : u32 {
+    SHADER_LIGHT_VN  = 0x0,
+    SHADER_LIGHT_VNT = 0x1,
+};
+
 struct RenderMe {
     Material material;
     Transform transform;
     Mesh mesh;
+    RendermeShaderType shader_type;
     u32 vao;
 };
 

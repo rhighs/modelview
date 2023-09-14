@@ -20,8 +20,6 @@ char *read_shader_file(const char *filepath) {
     return shader_content;
 }
 
-void sp_bind_vao(ShaderProgram *program, const u32 VAO) { program->VAO = VAO; }
-
 void sp_use(ShaderProgram *program) {
     glUseProgram(program->program);
 }

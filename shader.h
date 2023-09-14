@@ -8,10 +8,7 @@
 
 struct ShaderProgram {
     u32 program;
-    u32 VAO;
 };
-
-void sp_bind_vao(ShaderProgram *program, const u32 VAO);
 
 void sp_use(ShaderProgram *program);
 
