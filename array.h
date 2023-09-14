@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <stdio.h>
+#include <assert.h>
 #include <sys/types.h>
 
 #include "types.h"
@@ -119,13 +120,16 @@ Array<T> array_zip(Array<T> a, Array<T> b) {
 
 template<typename T>
 Array<T> array_from_copy(T *data, u32 len) {
+    assert(len > 0 && "Wym copy from length = 0 ??");
     Array<T> result;
     result.len = len;
     const u32 capacity = sizeof(T) * len;
     result.data = (T *)malloc(capacity);
-    memcpy(result.data, data, len);
+    memcpy(result.data, data, sizeof(data[0]) * len);
     return result;
 }
 
+template<typename T>
+void array_print(Array<T> *arr) {};
 #endif
 
