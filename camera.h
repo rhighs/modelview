@@ -17,6 +17,9 @@ struct Camera {
     f32 sens;
     f32 yaw;
     f32 pitch;
+    f32 z_far;
+    f32 z_near;
+    f32 view_angle_deg;
 };
 
 void camera_init(Camera *camera, vec3 pos);

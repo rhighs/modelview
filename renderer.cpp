@@ -19,6 +19,7 @@
 b8 shaders_loaded = FALSE;
 ShaderProgram light_tex_program;
 ShaderProgram light_program;
+
 // ========================================================
 
 Renderer rdr_init(Camera *camera, u32 width, u32 height) {
@@ -55,7 +56,11 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
     glm_lookat(renderer->camera->pos, camera_target, renderer->camera->up, view); 
 
     mat4 projection = {};
-    glm_perspective(glm_rad(45.0f), (f32)renderer->vp_width/(f32)renderer->vp_height, 0.1f, 100.0f, projection);
+    glm_perspective(glm_rad(renderer->camera->view_angle_deg),
+            (f32)renderer->vp_width/(f32)renderer->vp_height,
+            renderer->camera->z_near,
+            renderer->camera->z_far,
+            projection);
 
     Transform *transform = &renderme->transform;
     mat4 model = {};

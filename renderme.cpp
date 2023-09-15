@@ -83,8 +83,10 @@ RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material) {
         IO_LOG(stdout, "using shader = SHADER_LIGHT_VN", NULL);
     }
 
-    IO_LOG(stdout, "Going to render = ", NULL);
+#ifdef RDR_DEBUG
+    IO_LOG(stdout, "mesh data in renderme =");
     array_print(&data);
+#endif
 
     glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, result.transform.rotation);
     glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, result.transform.translation);
@@ -95,8 +97,6 @@ RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material) {
     // FIXME: ownership is outside!
     result.mesh.vertices = data;
     result.mesh.vertex_count = data.len / DATA_LINE_LENGTH;
-
-    IO_LOG(stdout, "data.len / DATA_LINE_LENGTH = %d", data.len / DATA_LINE_LENGTH);
 
     result.material = material;
     result.vao = VAO;

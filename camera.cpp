@@ -14,6 +14,9 @@ void camera_init(Camera *camera, vec3 pos) {
     camera->speed = __CAMERA_DEFAULT_SPEED;
     camera->yaw = 0.0f;
     camera->pitch = 0.0f;
+    camera->z_near = 0.1f;
+    camera->z_far = 1000.0f;
+    camera->view_angle_deg = 45.0f;
 }
 
 void camera_update_direction(Camera *camera, const f32 xrel, const f32 yrel) {
