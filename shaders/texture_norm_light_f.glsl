@@ -124,6 +124,6 @@ void main() {
     }
 
     vec4 texture_color = texture2D(tex, tex_coords);
-    FragColor = texture_color ;//* vec4(result, 1.0);
+    FragColor = texture_color * vec4(result, 1.0);
 }
 

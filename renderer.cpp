@@ -71,30 +71,53 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
     glm_rotate(model, glm_rad(transform->rotation[2]), (vec3) { 0.0f, 0.0f, 1.0f });
     glm_scale(model, transform->scale);
 
-    sp_set_uniform_vec3f(program, "material.ambient",    renderme->material.ambient);
-    sp_set_uniform_vec3f(program, "material.diffuse",    renderme->material.diffuse);
-    sp_set_uniform_vec3f(program, "material.specular",   renderme->material.specular);
-    sp_set_uniform_float(program, "material.shininess",  renderme->material.shininess);
+    // Set material uniforms
+    {
+        auto m = renderme->material;
+        sp_set_uniform_vec3f(program, "material.ambient",    m.ambient);
+        sp_set_uniform_vec3f(program, "material.diffuse",    m.diffuse);
+        sp_set_uniform_vec3f(program, "material.specular",   m.specular);
+        sp_set_uniform_float(program, "material.shininess",  m.shininess);
+    }
 
-    sp_set_uniform_mat4(program, "model", model);
-    sp_set_uniform_mat4(program, "view", view);
-    sp_set_uniform_mat4(program, "projection", projection);
+    // Set transformation matrices
+    {
+        sp_set_uniform_mat4(program, "model", model);
+        sp_set_uniform_mat4(program, "view", view);
+        sp_set_uniform_mat4(program, "projection", projection);
+    }
 
     if (scene->point_lights.len > 0) {
-        sp_set_uniform_vec3f(program, "point_lights[0].ambient",     scene->point_lights[0].ambient);
-        sp_set_uniform_vec3f(program, "point_lights[0].diffuse",     scene->point_lights[0].diffuse);
-        sp_set_uniform_vec3f(program, "point_lights[0].specular",    scene->point_lights[0].specular);
-        sp_set_uniform_vec4f(program, "point_lights[0].position",    scene->point_lights[0].position);
-        sp_set_uniform_float(program, "point_lights[0].constant",    scene->point_lights[0].att_constant);
-        sp_set_uniform_float(program, "point_lights[0].linear",      scene->point_lights[0].att_linear);
-        sp_set_uniform_float(program, "point_lights[0].quadratic",   scene->point_lights[0].att_quadratic);
+        for (u32 i=0; i<scene->directional_lights.len; i++) {
+            auto pl = scene->point_lights[i];
+
+#ifdef RDR_DEBUG
+        IO_LOG(stdout, "using point light n = %d (%f, %f, %f)", i,
+                pl.position[0], pl.position[1], pl.position[2]);
+#endif
+
+            sp_set_uniform_vec3f(program, "point_lights[0].ambient",     pl.ambient);
+            sp_set_uniform_vec3f(program, "point_lights[0].diffuse",     pl.diffuse);
+            sp_set_uniform_vec3f(program, "point_lights[0].specular",    pl.specular);
+            sp_set_uniform_vec4f(program, "point_lights[0].position",    pl.position);
+            sp_set_uniform_float(program, "point_lights[0].constant",    pl.att_constant);
+            sp_set_uniform_float(program, "point_lights[0].linear",      pl.att_linear);
+            sp_set_uniform_float(program, "point_lights[0].quadratic",   pl.att_quadratic);
+        }
     }
 
     if (scene->directional_lights.len > 0) {
-        sp_set_uniform_vec3f(program, "dir_light.ambient",     scene->directional_lights[0].ambient);
-        sp_set_uniform_vec3f(program, "dir_light.diffuse",     scene->directional_lights[0].diffuse);
-        sp_set_uniform_vec3f(program, "dir_light.specular",    scene->directional_lights[0].specular);
-        sp_set_uniform_vec4f(program, "dir_light.direction",   scene->directional_lights[0].direction);
+        for (u32 i=0; i<scene->directional_lights.len; i++) {
+            auto dl = scene->directional_lights[0];
+#ifdef RDR_DEBUG
+        IO_LOG(stdout, "using directional light n = %d (%f, %f, %f)", i,
+                dl.direction[0], dl.direction[1], dl.direction[2]);
+#endif
+            sp_set_uniform_vec3f(program, "dir_light.ambient",     dl.ambient);
+            sp_set_uniform_vec3f(program, "dir_light.diffuse",     dl.diffuse);
+            sp_set_uniform_vec3f(program, "dir_light.specular",    dl.specular);
+            sp_set_uniform_vec4f(program, "dir_light.direction",   dl.direction);
+        }
     }
 
     sp_set_uniform_vec3f(program, "eye.position", renderer->camera->pos);
@@ -104,7 +127,7 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
         // Vertex count is to be intented as the "attribute" unit or whatever.
         // As a question: how many "vertex shader" calls there will be? vertex_count shader calls
  #ifdef RDR_DEBUG
-        fprintf(stdout, "[%s:%s:%d]: rendering vertex count = %d\n", __FILE__, __FUNCTION__, __LINE__, renderme->mesh->vertex_count);
+        fprintf(stdout, "[%s:%s:%d]: rendering vertex count = %d\n", __FILE__, __FUNCTION__, __LINE__, renderme->mesh.vertex_count);
  #endif
         glDrawArrays(GL_TRIANGLES, 0, renderme->mesh.vertex_count);
     }

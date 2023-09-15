@@ -63,28 +63,39 @@ u32 __norm_vao(f32 *data, u32 len) {
     return VAO;
 }
 
+#define CHECKFLAG(A, B) (A & B)
+
 RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material) {
     RenderMe result;
 
-    u32 VAO;
-    // Default: vertex + normals
-    u32 DATA_LINE_LENGTH;
-    if (flags & RDRME_TEXTURE) {
+    u32 VAO = 0;
+    u32 DATA_LINE_LENGTH = 0;
+
+    if (
+          CHECKFLAG(flags, RDRME_LIGHT)
+       && CHECKFLAG(flags, RDRME_TEXTURE)
+       && CHECKFLAG(flags, RDRME_NORMAL)
+       ) {
         // vertex + normals + texture coords
         DATA_LINE_LENGTH = 8;
         VAO = __norm_tex_vao(data.data, data.len);
         result.shader_type = SHADER_LIGHT_VNT;
         IO_LOG(stdout, "using shader = SHADER_LIGHT_VNT", NULL);
-    } else {
+    } else if (
+            CHECKFLAG(flags, RDRME_LIGHT)
+         && CHECKFLAG(flags, RDRME_NORMAL)
+       ) {
         // vertex + normals
         DATA_LINE_LENGTH = 6;
         VAO = __norm_vao(data.data, data.len);
         result.shader_type = SHADER_LIGHT_VN;
         IO_LOG(stdout, "using shader = SHADER_LIGHT_VN", NULL);
+    } else {
+        VAO = 0;
     }
 
 #ifdef RDR_DEBUG
-    IO_LOG(stdout, "mesh data in renderme =");
+    IO_LOG(stdout, "mesh data in renderme =", NULL);
     array_print(&data);
 #endif
 

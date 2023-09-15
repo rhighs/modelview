@@ -459,7 +459,7 @@ int main(int argc, char *argv[]) {
     Camera camera;
 
     Model mymodel;
-    load_wf_obj_model("./res/models/lambo/lambo.obj", &mymodel);
+    load_wf_obj_model("./res/models/chicken/chicken.obj", &mymodel);
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
@@ -470,7 +470,8 @@ int main(int argc, char *argv[]) {
     printf("[MODEL_INFO]: no. triangles = %d\n", (result.len/6)/3);
 
     // Light coloring and shader stuff
-    Material material = mat_make(mat_white_rubber, (vec3) { 1.f, 1.0f, 1.0f });
+    Material material = mat_make(mat_white_plastic,
+            (vec3) { 0.0f, 0.0f, 1.0f });
 
     RenderMe rme = rdrme_create(result,
         RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
@@ -479,7 +480,7 @@ int main(int argc, char *argv[]) {
 
     Array<f32> vertices_arr = array_from_copy(vertices, RAW_ARRAY_LEN(vertices));
 
-    Material debug_material = mat_make(mat_white_rubber, (vec3) { 1.0f, 0.0f, 0.0f });
+    Material debug_material = mat_make(mat_chrome, (vec3) { 0.0f, 0.0f, 1.0f });
     RenderMe debug_box = rdrme_create(
         vertices_arr,
         RDRME_LIGHT | RDRME_NORMAL,
@@ -494,8 +495,8 @@ int main(int argc, char *argv[]) {
     Renderer renderer = rdr_init(&camera, win_width, win_height);
     camera_init(renderer.camera, camera_pos);
 
-    f32 light_x = cos(SDL_GetTicks()/1000.0f) * 1.0f;
-    f32 light_z = sin(SDL_GetTicks()/1000.0f) * 1.0f;
+    const f32 light_x = cos(SDL_GetTicks()/1000.0f) * 1.0f;
+    const f32 light_z = sin(SDL_GetTicks()/1000.0f) * 1.0f;
 
     vec3 light_position = { light_x, 1.0f, light_z };
     vec3 light_color = { 1.0f, 1.0f, 1.0f };
@@ -506,6 +507,12 @@ int main(int argc, char *argv[]) {
     Scene main_scene = scene_init();
     scene_add_point_light(&main_scene, main_light);
     scene_add_directional_light(&main_scene, dir_light);
+
+    RenderMe simple_box = rdrme_create(
+        vertices_arr,
+        RDRME_LIGHT | RDRME_NORMAL,
+        debug_material
+        );
 
     while (running) {
         last_time = now_time;
@@ -576,7 +583,10 @@ int main(int argc, char *argv[]) {
             rdr_draw(&renderer, &main_scene, &debug_box);
         }
 
-        for (u32 n_lambos=0; n_lambos<4; n_lambos++) {
+        rdr_draw(&renderer, &main_scene, &rme);
+        rdr_draw(&renderer, &main_scene, &simple_box);
+
+        for (u32 n_lambos=0; n_lambos<1; n_lambos++) {
             glm_vec3_copy((vec3) { 40.0f * (f32)n_lambos, 0.0f, 0.0f }, rme.transform.translation);
             rdr_draw(&renderer, &main_scene, &rme);
         }
