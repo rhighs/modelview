@@ -479,10 +479,6 @@ int main(int argc, char *argv[]) {
 
     Array<f32> vertices_arr = array_from_copy(vertices, RAW_ARRAY_LEN(vertices));
 
-    RenderMe rme_1 = rdrme_create(vertices_arr,
-        RDRME_LIGHT | RDRME_NORMAL,
-        material);
-
     Material debug_material = mat_make(mat_white_rubber, (vec3) { 1.0f, 0.0f, 0.0f });
     RenderMe debug_box = rdrme_create(
         vertices_arr,
@@ -553,7 +549,6 @@ int main(int argc, char *argv[]) {
 
         const f32 y_rotation = 10.0 * dt_secs;
         rme.transform.rotation[1] += y_rotation;
-        rme_1.transform.rotation[1] += 10.0 * dt_secs;
 
         // Test: oscillating light position
         main_scene.point_lights[0].position[0] = (f32)((1 + sin(((f64)SDL_GetTicks64())/1000.0)) * 2.0);
@@ -581,8 +576,10 @@ int main(int argc, char *argv[]) {
             rdr_draw(&renderer, &main_scene, &debug_box);
         }
 
-        rdr_draw(&renderer, &main_scene, &rme);
-        rdr_draw(&renderer, &main_scene, &rme_1);
+        for (u32 n_lambos=0; n_lambos<4; n_lambos++) {
+            glm_vec3_copy((vec3) { 40.0f * (f32)n_lambos, 0.0f, 0.0f }, rme.transform.translation);
+            rdr_draw(&renderer, &main_scene, &rme);
+        }
 
         SDL_GL_SwapWindow(mainwindow);
     }
