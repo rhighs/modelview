@@ -249,7 +249,7 @@ Array<f32> model_zip_v_vn_tex(Model *model) {
 
             for (u32 component_id=0; component_id<3; component_id++) {
                 if (model->normals.len == 0)
-                    array_push(&result, (f32)0.0f);
+                    array_push(&result, (f32)1.0f);
                 else
                     array_push(&result, model->normals[normal_id+component_id]);
             }
@@ -439,7 +439,7 @@ int main(int argc, char *argv[]) {
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
     };
     
-    auto texture_data = io_read_image_file("./res/models/lambo/lambo.png");
+    auto texture_data = io_read_image_file("./res/models/bike/bike.png");
     u32 _texture = bind_texture_info(texture_data);
     stbi_image_free(texture_data.data);
     
@@ -459,7 +459,7 @@ int main(int argc, char *argv[]) {
     Camera camera;
 
     Model mymodel;
-    load_wf_obj_model("./res/models/chicken/chicken.obj", &mymodel);
+    load_wf_obj_model("./res/models/bike/bike.obj", &mymodel);
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
