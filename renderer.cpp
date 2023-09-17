@@ -103,6 +103,7 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
             sp_set_uniform_float(program, "point_lights[0].constant",    pl.att_constant);
             sp_set_uniform_float(program, "point_lights[0].linear",      pl.att_linear);
             sp_set_uniform_float(program, "point_lights[0].quadratic",   pl.att_quadratic);
+            sp_set_uniform_float(program, "point_lights[0].intensity",   pl.intensity);
         }
     }
 
@@ -117,6 +118,7 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
             sp_set_uniform_vec3f(program, "dir_light.diffuse",     dl.diffuse);
             sp_set_uniform_vec3f(program, "dir_light.specular",    dl.specular);
             sp_set_uniform_vec4f(program, "dir_light.direction",   dl.direction);
+            sp_set_uniform_float(program, "dir_light.intensity",   dl.intensity);
         }
     }
 

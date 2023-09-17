@@ -18,6 +18,8 @@ struct PointLight {
     f32 att_constant;
     f32 att_linear;
     f32 att_quadratic;
+
+    f32 intensity;
 };
 
 struct DirectionalLight {
@@ -26,6 +28,8 @@ struct DirectionalLight {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+
+    f32 intensity;
 };
 
 struct Scene {

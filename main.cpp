@@ -1,3 +1,4 @@
+#include "cglm/vec3.h"
 #include "io.h"
 #include "scene.h"
 #include <SDL2/SDL_mouse.h>
@@ -95,216 +96,7 @@ void checkSDLError(int line) {
 }
 
 #include "array.h"
-
-struct FaceVertex {
-    u32 vertex_id;
-    u32 tex_coord_id;
-    u32 normal_id;
-};
-
-struct Model {
-    Array<f32> vertices;
-    Array<f32> normals;
-    Array<f32> tex_coords;
-    Array<u32> indices;
-    Array<Array<FaceVertex>> faces;
-};
-
-u32 wf_parse_f32_values(Array<f32> *dst, const char *from, const u32 limit) {
-    String line = string_strip_free(string_from(from));
-    auto values = string_split(line, ' ');
-
-    u32 added = 0;
-    for (u32 i=0; i<values.len && added < limit; i++) {
-        auto token = values[i];
-        const f32 value = atof(string_c(&token));
-        array_push(dst, value);
-        added++;
-    }
-
-    for (u32 i=0; i<values.len; i++) {
-        auto token = values[i];
-        string_free(&token);
-    }
-    array_free(&values);
-
-    return values.len;
-}
-
-void wf_parse_face_data(Array<Array<FaceVertex>> *dst, const char *from) {
-    Array<FaceVertex> result;
-    array_init(&result, 4);
-
-    String line = string_from(from);
-    Array<String> defs = string_split(line, ' ');
-
-    for (u32 i=0; i<defs.len; i++) {
-        FaceVertex face_vertex;
-        Array<String> values = string_split(defs[i], '/');
-
-        if (values.len == 2) {
-            String vertex_str = values[0];
-            face_vertex.vertex_id = atoi(string_c(&vertex_str));
-            String tex_str = values[1];
-            face_vertex.tex_coord_id = atoi(string_c(&tex_str));
-        } else if (values.len == 3) {
-            String vertex_str = values[0];
-            face_vertex.vertex_id = atoi(string_c(&vertex_str));
-            String tex_str = values[1];
-            face_vertex.tex_coord_id = atoi(string_c(&tex_str));
-            String normal_str = values[2];
-            face_vertex.normal_id = atoi(string_c(&normal_str));
-        }
-
-        for (u32 i=0; i<values.len; i++) {
-            auto some_str = values[i];
-            string_free(&some_str);
-        }
-        array_free(&values);
-        array_push(&result, face_vertex);
-    }
-
-    for (u32 i=0; i<defs.len; i++) {
-        auto some_str = defs[i];
-        string_free(&some_str);
-    }
-    array_free(&defs);
-    array_push(dst, result);
-}
-
-void load_wf_obj_model(const char *path, Model *dst) {
-    array_init(&(dst->vertices),    32);
-    array_init(&(dst->normals),     32);
-    array_init(&(dst->tex_coords),  32);
-    array_init(&(dst->indices),     32);
-    array_init(&(dst->faces),       32);
-
-    char *content = NULL;
-    u32 len = io_read_file(path, (u8 **)&content);
-
-    if (content == NULL) {
-        fprintf(stderr, "[%s:%s:%d]: Error reading file: %s\n",
-                __FILE__, __FUNCTION__, __LINE__, path);
-        exit(1);
-    }
-
-    for (u32 i=0; i<len; i++) {
-        u32 line_len = 0;
-        for (; content[i+line_len]!='\n'; line_len++);
-
-        Array<char> line;
-        array_init_with(&line, '\0', line_len+1);
-        for (; content[i] != '\n'; i++)
-            array_push(&line, content[i]);
-
-        switch (line.data[0]) {
-        case 'v':
-            switch(line.data[1]) {
-            case ' ': wf_parse_f32_values(&dst->vertices, line.data + 2, 3); break;
-            case 't': wf_parse_f32_values(&dst->tex_coords, line.data + 3, 2); break;
-            case 'n': wf_parse_f32_values(&dst->normals, line.data + 3, 3); break;
-            }
-            break;
-        case 'f':
-            wf_parse_face_data(&dst->faces, line.data + 2); break;
-        }
-    }
-}
-
-Array<f32> model_zip_v_vn_tex(Model *model) {
-    Array<f32> result;
-    array_init(&result, model->faces.len * 3);
-    const u32 quad[15] = {
-        0, 1, 2,
-        0, 2, 3,
-        0, 3, 4,
-        0, 4, 5,
-        0, 5, 6
-    };
-
-#if 0
-    if (model->normals.len == 0) {
-        return {};
-    }
-#endif
-
-    for (u32 i=0; i<model->faces.len; i++) {
-        Array<FaceVertex> faces = model->faces[i];
-
-        u32 quad_max = 3;
-        if (faces.len == 4)      quad_max = 6;
-        else if (faces.len == 5) quad_max = 9;
-        else if (faces.len == 6) quad_max = 12;
-        else if (faces.len == 7) quad_max = 15;
-
-        for (u32 v_id=0; v_id<quad_max; v_id++) {
-            const u32 v = quad[v_id];
-            const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
-            const u32 normal_id = (faces[v].normal_id - 1) * 3;
-            const u32 tex_coord_id =  (faces[v].tex_coord_id - 1) * 2;
-
-            for (u32 component_id=0; component_id<3; component_id++) {
-                array_push(&result, model->vertices[vertex_id+component_id]);
-            }
-
-            for (u32 component_id=0; component_id<3; component_id++) {
-                if (model->normals.len == 0)
-                    array_push(&result, (f32)1.0f);
-                else
-                    array_push(&result, model->normals[normal_id+component_id]);
-            }
-            for (u32 component_id=0; component_id<2; component_id++) {
-                if (model->tex_coords.len == 0)
-                    array_push(&result, (f32)0.0f);
-                else
-                    array_push(&result, model->tex_coords[tex_coord_id+component_id]);
-            }
-        }
-    }
-
-    return result;
-}
-
-Array<f32> model_zip_v_vn(Model *model) {
-    Array<f32> result;
-    array_init(&result, model->faces.len * 3);
-    const u32 quad[15] = {
-        0, 1, 2,
-        0, 2, 3,
-        0, 3, 4,
-        0, 4, 5,
-        0, 5, 6
-    };
-
-#if 0
-    if (model->normals.len == 0) {
-        return {};
-    }
-#endif
-
-    for (u32 i=0; i<model->faces.len; i++) {
-        Array<FaceVertex> faces = model->faces[i];
-
-        u32 quad_max = 3;
-        if (faces.len == 4)      quad_max = 6;
-        else if (faces.len == 5) quad_max = 9;
-        else if (faces.len == 6) quad_max = 12;
-        else if (faces.len == 7) quad_max = 15;
-
-        for (u32 v_id=0; v_id<quad_max; v_id++) {
-            const u32 v = quad[v_id];
-            const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
-            // const u32 normal_id = (faces[v].normal_id - 1) * 3;
-
-            for (u32 component_id=0; component_id<3; component_id++)
-                array_push(&result, model->vertices[vertex_id+component_id]);
-            for (u32 component_id=0; component_id<3; component_id++)
-                array_push(&result, 0.0f);
-        }
-    }
-
-    return result;
-}
+#include "wavefront.h"
 
 char *read_shader_file(const char *filepath) {
     FILE *file = fopen(filepath, "r");
@@ -336,6 +128,30 @@ u32 bind_texture_info(LoadedImage image) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     return texture;
+}
+
+
+void __gen_face_normal(vec3 v1, vec3 v2, vec3 v3, vec3 result) {
+    vec3 v1v2;
+    vec3 v1v3;
+    glm_vec3_sub(v2, v1, v1v2);
+    glm_vec3_sub(v3, v1, v1v3);
+    glm_vec3_cross(v1v2, v1v3, result);
+    glm_vec3_norm(result);
+}
+
+void v_vn_tex_gen_normals(Array<f32> v_vn_tex) {
+    for (u32 offset=0; offset<v_vn_tex.len-5; offset+=8 * 3) {
+        vec3 v1 = { v_vn_tex[offset+0 ], v_vn_tex[offset+0 +1], v_vn_tex[offset+0 +2] };
+        vec3 v2 = { v_vn_tex[offset+8 ], v_vn_tex[offset+8 +1], v_vn_tex[offset+8 +2] };
+        vec3 v3 = { v_vn_tex[offset+16], v_vn_tex[offset+16+1], v_vn_tex[offset+16+2] };
+
+        vec3 normal;
+        __gen_face_normal(v1, v2, v3, normal);
+        v_vn_tex[offset+0 +3] = normal[0]; v_vn_tex[offset+0 +4] = normal[1]; v_vn_tex[offset+0 +5] = normal[2];
+        v_vn_tex[offset+8 +3] = normal[0]; v_vn_tex[offset+8 +4] = normal[1]; v_vn_tex[offset+8 +5] = normal[2];
+        v_vn_tex[offset+16+3] = normal[0]; v_vn_tex[offset+16+4] = normal[1]; v_vn_tex[offset+16+5] = normal[2];
+    }
 }
  
 int main(int argc, char *argv[]) {
@@ -439,7 +255,7 @@ int main(int argc, char *argv[]) {
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
     };
     
-    auto texture_data = io_read_image_file("./res/models/bike/bike.png");
+    auto texture_data = io_read_image_file("./res/models/lambo/lambo_diffuse.png");
     u32 _texture = bind_texture_info(texture_data);
     stbi_image_free(texture_data.data);
     
@@ -458,20 +274,21 @@ int main(int argc, char *argv[]) {
 
     Camera camera;
 
-    Model mymodel;
-    load_wf_obj_model("./res/models/bike/bike.obj", &mymodel);
+    OBJModel mymodel;
+    wf_load_obj_model("./res/models/lambo/lambo.obj", &mymodel);
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
             mymodel.tex_coords.len,
             mymodel.faces.len);
-    auto result = model_zip_v_vn_tex(&mymodel);
+    auto result = wf_model_zip_v_vn_tex(&mymodel);
+    v_vn_tex_gen_normals(result);
 
     printf("[MODEL_INFO]: no. triangles = %d\n", (result.len/6)/3);
 
     // Light coloring and shader stuff
     Material material = mat_make(mat_white_plastic,
-            (vec3) { 0.0f, 0.0f, 1.0f });
+            (vec3) { 1.0f, .7f, 0.0f });
 
     RenderMe rme = rdrme_create(result,
         RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
@@ -498,7 +315,7 @@ int main(int argc, char *argv[]) {
     const f32 light_x = cos(SDL_GetTicks()/1000.0f) * 1.0f;
     const f32 light_z = sin(SDL_GetTicks()/1000.0f) * 1.0f;
 
-    vec3 light_position = { light_x, 1.0f, light_z };
+    vec3 light_position = { light_x, 10.0f, light_z };
     vec3 light_color = { 1.0f, 1.0f, 1.0f };
 
     PointLight main_light = point_light_make(light_position, light_color, light_color, light_color);
@@ -508,10 +325,11 @@ int main(int argc, char *argv[]) {
     scene_add_point_light(&main_scene, main_light);
     scene_add_directional_light(&main_scene, dir_light);
 
+    Material box_material = mat_make(mat_white_plastic, light_color);
     RenderMe simple_box = rdrme_create(
         vertices_arr,
         RDRME_LIGHT | RDRME_NORMAL,
-        debug_material
+        box_material
         );
 
     while (running) {
@@ -558,7 +376,8 @@ int main(int argc, char *argv[]) {
         rme.transform.rotation[1] += y_rotation;
 
         // Test: oscillating light position
-        main_scene.point_lights[0].position[0] = (f32)((1 + sin(((f64)SDL_GetTicks64())/1000.0)) * 2.0);
+        main_scene.point_lights[0].position[0] = (f32)((1 + sin(((f64)SDL_GetTicks64())/1000.0)) * 10.0) - 5.0;
+        main_scene.point_lights[0].intensity = 5.0f;
 
         glClearColor(
                 CLEAR_COLOR[0],
@@ -582,6 +401,8 @@ int main(int argc, char *argv[]) {
             glm_vec3_copy(rme.transform.rotation, debug_box.transform.rotation);
             rdr_draw(&renderer, &main_scene, &debug_box);
         }
+
+        glm_vec3_copy(main_scene.point_lights[0].position, simple_box.transform.translation);
 
         rdr_draw(&renderer, &main_scene, &rme);
         rdr_draw(&renderer, &main_scene, &simple_box);

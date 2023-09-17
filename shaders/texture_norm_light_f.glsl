@@ -21,6 +21,8 @@ struct PointLight {
     float constant;
     float linear;
     float quadratic;
+
+    float intensity;
 };
 
 struct DirectionalLight {
@@ -30,6 +32,8 @@ struct DirectionalLight {
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+
+    float intensity;
 };
 
 struct Eye {
@@ -48,14 +52,6 @@ uniform DirectionalLight dir_light;
 in vec3 normal;
 in vec3 frag_pos;
 
-float mat_ambient_intensity(PointLight light, vec3 diffuse, vec3 ambient) {
-    return dot(light.ambient, ambient)/dot(light.ambient, diffuse);
-}
-
-float mat_ambient_intensity(DirectionalLight light, vec3 diffuse, vec3 ambient) {
-    return dot(light.ambient, ambient)/dot(light.ambient, diffuse);
-}
-
 vec3 compute_dir_light(DirectionalLight light, vec3 normal) {
     // ambient
     vec3 ambient = light.ambient * material.ambient;
@@ -66,14 +62,14 @@ vec3 compute_dir_light(DirectionalLight light, vec3 normal) {
     vec3 diffuse = max(dot(normal, light_direction), 0.0f) * light.diffuse;
 
     // spec
-    vec3 view_direction = normalize(eye.position - frag_pos);
-    vec3 reflect_direction = reflect(-light_direction, normal);
+    // vec3 view_direction = normalize(eye.position - frag_pos);
+    // vec3 reflect_direction = reflect(-light_direction, normal);
 
-    // http://devernay.free.fr/cours/opengl/materials.html
-    float spec_strength = pow(max(dot(view_direction, reflect_direction), 0.0f), 128.0 * material.shininess);
-    vec3 specular = light.specular * (spec_strength * material.specular);
+    // // http://devernay.free.fr/cours/opengl/materials.html
+    // float spec_strength = pow(max(dot(view_direction, reflect_direction), 0.0f), 128.0 * material.shininess);
+    // vec3 specular = light.specular * (spec_strength * material.specular);
 
-    return ambient + specular + diffuse;
+    return ambient + diffuse; // + specular;
 }
 
 float compute_light_attenuation(PointLight light) {
@@ -115,15 +111,15 @@ void main() {
     for (int i=0; i<N_POINT_LIGHTS; i++) {
         PointLight l = point_lights[i];
         if (l.position.w > 0.0) {
-            result += compute_point_light(point_lights[i], norm);
+            result += compute_point_light(point_lights[i], norm) * l.intensity;
         }
     }
 
     if (dir_light.direction.w > 0.0) {
-        result += compute_dir_light(dir_light, norm);
+        result += compute_dir_light(dir_light, norm) * dir_light.intensity;
     }
 
     vec4 texture_color = texture2D(tex, tex_coords);
-    FragColor = texture_color * vec4(result, 1.0);
+    FragColor = (texture_color * vec4(result, 1.0));
 }
 
