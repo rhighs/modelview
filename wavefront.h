@@ -24,4 +24,6 @@ Array<f32> wf_model_zip_v_vn(OBJModel *model);
 
 void wf_load_obj_model(const char *path, OBJModel *dst);
 
+Array<u32> wf_model_extract_indices(OBJModel *model);
+
 #endif // WAVEFRONT_H

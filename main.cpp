@@ -130,7 +130,6 @@ u32 bind_texture_info(LoadedImage image) {
     return texture;
 }
 
-
 void __gen_face_normal(vec3 v1, vec3 v2, vec3 v3, vec3 result) {
     vec3 v1v2;
     vec3 v1v3;
@@ -138,6 +137,60 @@ void __gen_face_normal(vec3 v1, vec3 v2, vec3 v3, vec3 result) {
     glm_vec3_sub(v3, v1, v1v3);
     glm_vec3_cross(v1v2, v1v3, result);
     glm_vec3_norm(result);
+}
+
+Array<f32> v_gen_normals(Array<f32> vertices) {
+    Array<f32> result;
+    array_init(&result, vertices.len);
+
+    for (u32 i=0; i<vertices.len-3; i+=3) {
+        vec3 v1 = { vertices[i+0], vertices[i+1], vertices[i+2] };
+        vec3 v2 = { vertices[i+3], vertices[i+4], vertices[i+5] };
+        vec3 v3 = { vertices[i+6], vertices[i+7], vertices[i+8] };
+
+        vec3 normal;
+        __gen_face_normal(v1, v2, v3, normal);
+        array_push(&result, normal[0]); array_push(&result, normal[1]); array_push(&result, normal[2]);
+        array_push(&result, normal[0]); array_push(&result, normal[1]); array_push(&result, normal[2]);
+        array_push(&result, normal[0]); array_push(&result, normal[1]); array_push(&result, normal[2]);
+    }
+
+    return result;
+}
+
+void interpolate_normals(Array<f32> normals, Array<u32> indices) {
+    assert(normals.len/3 == indices.len && "Indices number must match that of normals");
+    Array<f32> result;
+    {
+        u32 max_index = 0;
+        for (u32 i=0; i<indices.len; i++)
+            if (indices[i] > max_index) max_index = indices[i];
+        array_init(&result, max_index);
+    }
+
+    for (u32 i=0; i<normals.len-3; i+=3) {
+        f32 n_x = normals[i+0];
+        f32 n_y = normals[i+1];
+        f32 n_z = normals[i+2];
+        result[indices[i]+0] += n_x;
+        result[indices[i]+1] += n_y;
+        result[indices[i]+2] += n_z;
+    }
+
+    for (u32 i=0; i<result.len-3; i+=3) {
+        vec3 normal = { result[i+0], result[i+1], result[i+2] };
+        glm_vec3_norm(normal);
+        result[i+0]=normal[0];
+        result[i+1]=normal[1];
+        result[i+2]=normal[2];
+    }
+
+    for (u32 i=0; i<normals.len-3; i+=3) {
+        normals[i+0] = result[indices[i]+0];
+        normals[i+1] = result[indices[i]+1];
+        normals[i+2] = result[indices[i]+2];
+    }
+    array_free(&result);
 }
 
 void v_vn_tex_gen_normals(Array<f32> v_vn_tex) {
@@ -153,7 +206,7 @@ void v_vn_tex_gen_normals(Array<f32> v_vn_tex) {
         v_vn_tex[offset+16+3] = normal[0]; v_vn_tex[offset+16+4] = normal[1]; v_vn_tex[offset+16+5] = normal[2];
     }
 }
- 
+
 int main(int argc, char *argv[]) {
     SDL_Window *mainwindow;
     SDL_GLContext maincontext;
@@ -282,7 +335,10 @@ int main(int argc, char *argv[]) {
             mymodel.tex_coords.len,
             mymodel.faces.len);
     auto result = wf_model_zip_v_vn_tex(&mymodel);
+    auto normals = v_gen_normals(mymodel.vertices);
+    auto indices = wf_model_extract_indices(&mymodel);
     v_vn_tex_gen_normals(result);
+    interpolate_normals(normals, indices);
 
     printf("[MODEL_INFO]: no. triangles = %d\n", (result.len/6)/3);
 

@@ -5,6 +5,22 @@
 
 #include "io.h"
 
+const u32 FACE_QUAD_ORDER[15] = {
+    0, 1, 2,
+    0, 2, 3,
+    0, 3, 4,
+    0, 4, 5,
+    0, 5, 6
+};
+
+u32 __compute_quad_max_end(u32 nfaces) {
+    if (nfaces == 4)      return 6;
+    else if (nfaces == 5) return 9;
+    else if (nfaces == 6) return 12;
+    else if (nfaces == 7) return 15;
+    return 3;
+}
+
 u32 __parse_f32_values(Array<f32> *dst, const char *from, const u32 limit) {
     String line = string_strip_free(string_from(from));
     auto values = string_split(line, ' ');
@@ -71,14 +87,6 @@ Array<f32> wf_model_zip_v_vn_tex(OBJModel *model) {
     Array<f32> result;
     array_init(&result, model->faces.len * 3);
 
-    const u32 quad[15] = {
-        0, 1, 2,
-        0, 2, 3,
-        0, 3, 4,
-        0, 4, 5,
-        0, 5, 6
-    };
-
     for (u32 i=0; i<model->faces.len; i++) {
         Array<OBJFaceVertex> faces = model->faces[i];
 
@@ -89,7 +97,7 @@ Array<f32> wf_model_zip_v_vn_tex(OBJModel *model) {
         else if (faces.len == 7) quad_max = 15;
 
         for (u32 v_id=0; v_id<quad_max; v_id++) {
-            const u32 v = quad[v_id];
+            const u32 v = FACE_QUAD_ORDER[v_id];
             const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
             const u32 normal_id = (faces[v].normal_id - 1) * 3;
             const u32 tex_coord_id =  (faces[v].tex_coord_id - 1) * 2;
@@ -119,25 +127,13 @@ Array<f32> wf_model_zip_v_vn_tex(OBJModel *model) {
 Array<f32> wf_model_zip_v_vn(OBJModel *model) {
     Array<f32> result;
     array_init(&result, model->faces.len * 3);
-    const u32 quad[15] = {
-        0, 1, 2,
-        0, 2, 3,
-        0, 3, 4,
-        0, 4, 5,
-        0, 5, 6
-    };
 
     for (u32 i=0; i<model->faces.len; i++) {
         Array<OBJFaceVertex> faces = model->faces[i];
-
-        u32 quad_max = 3;
-        if (faces.len == 4)      quad_max = 6;
-        else if (faces.len == 5) quad_max = 9;
-        else if (faces.len == 6) quad_max = 12;
-        else if (faces.len == 7) quad_max = 15;
+        u32 quad_max = __compute_quad_max_end(faces.len);
 
         for (u32 v_id=0; v_id<quad_max; v_id++) {
-            const u32 v = quad[v_id];
+            const u32 v = FACE_QUAD_ORDER[v_id];
             const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
             // const u32 normal_id = (faces[v].normal_id - 1) * 3;
 
@@ -145,6 +141,24 @@ Array<f32> wf_model_zip_v_vn(OBJModel *model) {
                 array_push(&result, model->vertices[vertex_id+component_id]);
             for (u32 component_id=0; component_id<3; component_id++)
                 array_push(&result, 0.0f);
+        }
+    }
+
+    return result;
+}
+
+Array<u32> wf_model_extract_indices(OBJModel *model) {
+    Array<u32> result;
+    array_init(&result, model->vertices.len/3);
+
+    for (u32 i=0; i<model->faces.len; i++) {
+        Array<OBJFaceVertex> faces = model->faces[i];
+        u32 quad_max = __compute_quad_max_end(faces.len);
+
+        for (u32 v_id=0; v_id<quad_max; v_id++) {
+            const u32 v = FACE_QUAD_ORDER[v_id];
+            const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
+            array_push(&result, vertex_id);
         }
     }
 
