@@ -60,6 +60,25 @@ void array_init_with(Array<T> *arr, T value, u32 count) {
 }
 
 template<typename T>
+void array_fill_with(Array<T> *arr, T value, u32 count) {
+    const u32 needed = sizeof(T) * count;
+    if (arr->capacity < needed) {
+        array_realloc(arr);
+    }
+
+    memset(arr->data, 0, arr->capacity);
+    for (u32 i=0; i<count; i++)
+        arr->data[i] = value;
+    arr->len = count;
+}
+
+template<typename T>
+void array_fill(Array<T> *arr, T value) {
+    for (u32 i=0; i<arr->len; i++)
+        arr->data[i] = value;
+}
+
+template<typename T>
 void array_realloc(Array<T> *arr) {
     const u32 new_capacity = (arr->len+arr->len/2) * sizeof(T);
     T *base = (T *)realloc((void *)(arr->data), new_capacity);

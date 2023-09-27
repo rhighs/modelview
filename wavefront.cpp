@@ -90,12 +90,7 @@ Array<f32> wf_model_zip_v_vn_tex(OBJModel *model) {
     for (u32 i=0; i<model->faces.len; i++) {
         Array<OBJFaceVertex> faces = model->faces[i];
 
-        u32 quad_max = 3;
-        if (faces.len == 4)      quad_max = 6;
-        else if (faces.len == 5) quad_max = 9;
-        else if (faces.len == 6) quad_max = 12;
-        else if (faces.len == 7) quad_max = 15;
-
+        u32 quad_max = __compute_quad_max_end(faces.len);
         for (u32 v_id=0; v_id<quad_max; v_id++) {
             const u32 v = FACE_QUAD_ORDER[v_id];
             const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
@@ -165,12 +160,77 @@ Array<u32> wf_model_extract_indices(OBJModel *model) {
     return result;
 }
 
-void wf_load_obj_model(const char *path, OBJModel *dst) {
-    array_init(&(dst->vertices),    32);
-    array_init(&(dst->normals),     32);
-    array_init(&(dst->tex_coords),  32);
-    array_init(&(dst->indices),     32);
-    array_init(&(dst->faces),       32);
+Array<f32> wf_model_extract_normals(OBJModel *model) {
+    Array<f32> result;
+    array_init(&result, model->faces.len * 3);
+
+    for (u32 i=0; i<model->faces.len; i++) {
+        Array<OBJFaceVertex> faces = model->faces[i];
+
+        u32 quad_max = __compute_quad_max_end(faces.len);
+        for (u32 v_id=0; v_id<quad_max; v_id++) {
+            const u32 v = FACE_QUAD_ORDER[v_id];
+            const u32 normal_id = (faces[v].normal_id - 1) * 3;
+            for (u32 component_id=0; component_id<3; component_id++) {
+                if (model->normals.len == 0)
+                    array_push(&result, (f32)1.0f);
+                else
+                    array_push(&result, model->normals[normal_id+component_id]);
+            }
+        }
+    }
+
+    return result;
+}
+
+Array<f32> wf_model_extract_texcoords(OBJModel *model) {
+    Array<f32> result;
+    array_init(&result, model->faces.len * 3);
+
+    for (u32 i=0; i<model->faces.len; i++) {
+        Array<OBJFaceVertex> faces = model->faces[i];
+        u32 quad_max = __compute_quad_max_end(faces.len);
+        for (u32 v_id=0; v_id<quad_max; v_id++) {
+            const u32 v = FACE_QUAD_ORDER[v_id];
+            const u32 tex_coord_id =  (faces[v].tex_coord_id - 1) * 2;
+            for (u32 component_id=0; component_id<2; component_id++) {
+                if (model->tex_coords.len == 0)
+                    array_push(&result, (f32)0.0f);
+                else
+                    array_push(&result, model->tex_coords[tex_coord_id+component_id]);
+            }
+        }
+    }
+
+    return result;
+}
+
+Array<f32> wf_model_extract_vertices(OBJModel *model) {
+    Array<f32> result;
+    array_init(&result, model->faces.len * 3);
+
+    for (u32 i=0; i<model->faces.len; i++) {
+        Array<OBJFaceVertex> faces = model->faces[i];
+        u32 quad_max = __compute_quad_max_end(faces.len);
+        for (u32 v_id=0; v_id<quad_max; v_id++) {
+            const u32 v = FACE_QUAD_ORDER[v_id];
+            const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
+            for (u32 component_id=0; component_id<3; component_id++) {
+                array_push(&result, model->vertices[vertex_id+component_id]);
+            }
+        }
+    }
+
+    return result;
+}
+
+OBJModel wf_load_obj_model(const char *path) {
+    OBJModel result;
+    array_init(&result.vertices,    32);
+    array_init(&result.normals,     32);
+    array_init(&result.tex_coords,  32);
+    array_init(&result.indices,     32);
+    array_init(&result.faces,       32);
 
     char *content = NULL;
     u32 len = io_read_file(path, (u8 **)&content);
@@ -193,14 +253,16 @@ void wf_load_obj_model(const char *path, OBJModel *dst) {
         switch (line.data[0]) {
         case 'v':
             switch(line.data[1]) {
-            case ' ': __parse_f32_values(&dst->vertices, line.data + 2, 3); break;
-            case 't': __parse_f32_values(&dst->tex_coords, line.data + 3, 2); break;
-            case 'n': __parse_f32_values(&dst->normals, line.data + 3, 3); break;
+            case ' ': __parse_f32_values(&result.vertices, line.data + 2, 3); break;
+            case 't': __parse_f32_values(&result.tex_coords, line.data + 3, 2); break;
+            case 'n': __parse_f32_values(&result.normals, line.data + 3, 3); break;
             }
             break;
         case 'f':
-            __parse_face_data(&dst->faces, line.data + 2); break;
+            __parse_face_data(&result.faces, line.data + 2); break;
         }
     }
+
+    return result;
 }
 

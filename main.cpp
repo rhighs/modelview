@@ -143,7 +143,7 @@ Array<f32> v_gen_normals(Array<f32> vertices) {
     Array<f32> result;
     array_init(&result, vertices.len);
 
-    for (u32 i=0; i<vertices.len-3; i+=3) {
+    for (u32 i=0; i<vertices.len-8; i+=9) {
         vec3 v1 = { vertices[i+0], vertices[i+1], vertices[i+2] };
         vec3 v2 = { vertices[i+3], vertices[i+4], vertices[i+5] };
         vec3 v3 = { vertices[i+6], vertices[i+7], vertices[i+8] };
@@ -158,53 +158,56 @@ Array<f32> v_gen_normals(Array<f32> vertices) {
     return result;
 }
 
-void interpolate_normals(Array<f32> normals, Array<u32> indices) {
-    assert(normals.len/3 == indices.len && "Indices number must match that of normals");
+void __interpolate_normals(Array<f32> normals, Array<u32> indices) {
     Array<f32> result;
-    {
-        u32 max_index = 0;
-        for (u32 i=0; i<indices.len; i++)
-            if (indices[i] > max_index) max_index = indices[i];
-        array_init(&result, max_index);
-    }
 
-    for (u32 i=0; i<normals.len-3; i+=3) {
-        f32 n_x = normals[i+0];
-        f32 n_y = normals[i+1];
-        f32 n_z = normals[i+2];
-        result[indices[i]+0] += n_x;
-        result[indices[i]+1] += n_y;
-        result[indices[i]+2] += n_z;
+    u32 max_i = 0;
+    for (u32 i=0; i<indices.len; i++)
+        if (max_i<indices[i]) max_i=indices[i];
+    array_init_with(&result, 0.0f, max_i * 3);
+    array_fill_with(&result, 0.0f, max_i * 3);
+
+    for (u32 i=0; i<indices.len; i++) {
+        u32 _i = indices[i];
+        f32 x=normals[i*3+0], y=normals[i*3+1], z=normals[i*3+2];
+        result[_i+0]+=x; result[_i+1]+=y; result[_i+2]+=z;
     }
 
     for (u32 i=0; i<result.len-3; i+=3) {
-        vec3 normal = { result[i+0], result[i+1], result[i+2] };
-        glm_vec3_norm(normal);
-        result[i+0]=normal[0];
-        result[i+1]=normal[1];
-        result[i+2]=normal[2];
+        vec3 vn = { result[i+0], result[i+1], result[i+2] };
+        glm_vec3_normalize(vn);
+        result[i+0]=vn[0]; result[i+1]=vn[1]; result[i+2]=vn[2];
     }
 
-    for (u32 i=0; i<normals.len-3; i+=3) {
-        normals[i+0] = result[indices[i]+0];
-        normals[i+1] = result[indices[i]+1];
-        normals[i+2] = result[indices[i]+2];
+    for (u32 i=0; i<indices.len; i++) {
+        const u32 _i = indices[i];
+        normals[i*3+0] = result[_i+0];
+        normals[i*3+1] = result[_i+1];
+        normals[i*3+2] = result[_i+2];
     }
+
+    IO_LOG(stdout, "vn = %d, idxs = %d, result = %d\n",
+            normals.len/3, indices.len, result.len);
+
     array_free(&result);
 }
 
-void v_vn_tex_gen_normals(Array<f32> v_vn_tex) {
-    for (u32 offset=0; offset<v_vn_tex.len-5; offset+=8 * 3) {
-        vec3 v1 = { v_vn_tex[offset+0 ], v_vn_tex[offset+0 +1], v_vn_tex[offset+0 +2] };
-        vec3 v2 = { v_vn_tex[offset+8 ], v_vn_tex[offset+8 +1], v_vn_tex[offset+8 +2] };
-        vec3 v3 = { v_vn_tex[offset+16], v_vn_tex[offset+16+1], v_vn_tex[offset+16+2] };
+Array<f32> zip_v_vn_tex(Array<f32> vertices, Array<f32> normals, Array<f32> texcoords) {
+    printf("%d %d %d\n", vertices.len, normals.len, texcoords.len);
+    assert(vertices.len == normals.len && texcoords.len/2 == vertices.len/3);
 
-        vec3 normal;
-        __gen_face_normal(v1, v2, v3, normal);
-        v_vn_tex[offset+0 +3] = normal[0]; v_vn_tex[offset+0 +4] = normal[1]; v_vn_tex[offset+0 +5] = normal[2];
-        v_vn_tex[offset+8 +3] = normal[0]; v_vn_tex[offset+8 +4] = normal[1]; v_vn_tex[offset+8 +5] = normal[2];
-        v_vn_tex[offset+16+3] = normal[0]; v_vn_tex[offset+16+4] = normal[1]; v_vn_tex[offset+16+5] = normal[2];
+    Array<f32> result;
+    const u32 len = texcoords.len + normals.len + vertices.len;
+    array_init(&result, len);
+
+    u32 vi=0, vni=0, texi=0;
+    for (;result.len<len;) {
+        array_push(&result, vertices[vi++]); array_push(&result, vertices[vi++]); array_push(&result, vertices[vi++]);
+        array_push(&result, normals[vni++]); array_push(&result, normals[vni++]); array_push(&result, normals[vni++]);
+        array_push(&result, texcoords[texi++]); array_push(&result, texcoords[texi++]);
     }
+
+    return result;
 }
 
 int main(int argc, char *argv[]) {
@@ -258,7 +261,7 @@ int main(int argc, char *argv[]) {
     // This makes our buffer swap syncronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
 
-    float vertices[] = {
+    f32 cube_vertices[] = {
         // Back quad
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
          0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
@@ -327,31 +330,42 @@ int main(int argc, char *argv[]) {
 
     Camera camera;
 
-    OBJModel mymodel;
-    wf_load_obj_model("./res/models/lambo/lambo.obj", &mymodel);
+    OBJModel mymodel = wf_load_obj_model("./res/models/lambo/lambo.obj");
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
             mymodel.tex_coords.len,
             mymodel.faces.len);
-    auto result = wf_model_zip_v_vn_tex(&mymodel);
-    auto normals = v_gen_normals(mymodel.vertices);
-    auto indices = wf_model_extract_indices(&mymodel);
-    v_vn_tex_gen_normals(result);
-    interpolate_normals(normals, indices);
+    Array<f32> rendering_data;
+    {
+        auto result = wf_model_zip_v_vn_tex(&mymodel);
+        auto indices = wf_model_extract_indices(&mymodel);
+        auto vertices = wf_model_extract_vertices(&mymodel);
+        auto texcoords = wf_model_extract_texcoords(&mymodel);
+        auto normals = v_gen_normals(vertices);
+        __interpolate_normals(normals, indices);
 
-    printf("[MODEL_INFO]: no. triangles = %d\n", (result.len/6)/3);
+        rendering_data = zip_v_vn_tex(vertices, normals, texcoords);
+
+        array_free(&result);
+        array_free(&indices);
+        array_free(&vertices);
+        array_free(&normals);
+        array_free(&texcoords);
+    }
+
+    printf("[MODEL_INFO]: no. triangles = %d\n", (rendering_data.len/6)/3);
 
     // Light coloring and shader stuff
     Material material = mat_make(mat_white_plastic,
             (vec3) { 1.0f, .7f, 0.0f });
 
-    RenderMe rme = rdrme_create(result,
+    RenderMe rme = rdrme_create(rendering_data,
         RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
         material);
     glm_vec3_copy((vec3) { .05f, .05f, .05f }, rme.transform.scale);
 
-    Array<f32> vertices_arr = array_from_copy(vertices, RAW_ARRAY_LEN(vertices));
+    Array<f32> vertices_arr = array_from_copy(cube_vertices, RAW_ARRAY_LEN(cube_vertices));
 
     Material debug_material = mat_make(mat_chrome, (vec3) { 0.0f, 0.0f, 1.0f });
     RenderMe debug_box = rdrme_create(
