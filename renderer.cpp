@@ -1,6 +1,7 @@
 #include <cglm/cglm.h>
 #include <glad/glad.h>
 
+#include "array.h"
 #include "renderer.h"
 #include "material.h"
 #include "shader.h"
@@ -20,10 +21,72 @@ b8 shaders_loaded = FALSE;
 ShaderProgram light_tex_program;
 ShaderProgram light_program;
 
+f32 __debug_cube_vertices[] = {
+    // Back quad
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+
+    // Front quad
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+
+    // Left side quad
+    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+
+    // Right side quad
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+    // Bottom quad
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+
+    // Top quad
+     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+};
+    
+RenderMe __debug_box;
+Material __debug_material;
+
 // ========================================================
 
 Renderer rdr_init(Camera *camera, u32 width, u32 height) {
     Renderer result;
+
+    {
+        __debug_material = mat_make(MAT_CHROME, (vec3) { 0.0f, 0.0f, 1.0f });
+        __debug_box = rdrme_create(
+            array_from(__debug_cube_vertices, RAW_ARRAY_LEN(__debug_cube_vertices)),
+            RDRME_LIGHT | RDRME_NORMAL,
+            __debug_material
+            );
+    }
     
     if (!shaders_loaded) {
         light_tex_program = sp_create("./shaders/vert_norm_tex_v.glsl", "./shaders/texture_norm_light_f.glsl");
@@ -38,7 +101,7 @@ Renderer rdr_init(Camera *camera, u32 width, u32 height) {
     return result;
 }
 
-void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
+void __rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
     ShaderProgram *program;
     switch (renderme->shader_type) {
         case SHADER_LIGHT_VN: 
@@ -133,5 +196,33 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
  #endif
         glDrawArrays(GL_TRIANGLES, 0, renderme->mesh.vertex_count);
     }
+}
+
+void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
+#if 0
+    if (renderme->debug_draw) {
+        const f32 scale_coeff = 0.05;
+        __debug_box.transform.scale[0] = scale_coeff;
+        __debug_box.transform.scale[1] = scale_coeff;
+        __debug_box.transform.scale[2] = scale_coeff;
+        // TEMP: debug draw object vertices
+        for (u32 i=0; i<renderme->mesh.vertices.len-3; i+=3) {
+            glm_vec3_copy((vec3) {
+                    renderme->mesh.vertices[i+0] * renderme->transform.scale[0],
+                    renderme->mesh.vertices[i+1] * renderme->transform.scale[1],
+                    renderme->mesh.vertices[i+2] * renderme->transform.scale[2]
+                    },
+                    __debug_box.transform.translation);
+            glm_vec3_rotate(__debug_box.transform.translation, glm_rad(renderme->transform.rotation[2]), (vec3){ 0.0f, 0.0f, 1.0f });
+            glm_vec3_rotate(__debug_box.transform.translation, glm_rad(renderme->transform.rotation[1]), (vec3){ 0.0f, 1.0f, 0.0f });
+            glm_vec3_rotate(__debug_box.transform.translation, glm_rad(renderme->transform.rotation[0]), (vec3){ 1.0f, 0.0f, 0.0f });
+            glm_vec3_add(__debug_box.transform.translation, renderme->transform.translation, __debug_box.transform.translation);
+            glm_vec3_copy(renderme->transform.rotation, __debug_box.transform.rotation);
+            __rdr_draw(renderer, scene, &__debug_box);
+        }
+    }
+#endif
+
+    __rdr_draw(renderer, scene, renderme);
 }
 

@@ -39,6 +39,7 @@ struct RenderMe {
     Mesh mesh;
     RendermeShaderType shader_type;
     u32 vao;
+    b8 debug_draw;
 };
 
 // Functions here should take care of which fragment shader to use

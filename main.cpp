@@ -35,45 +35,8 @@
 
 #include "string.h"
 
+#include "mesh_utils.h"
 #include "renderme.h"
-
-Material mat_white_plastic = {
-    {0.0, 0.0, 0.0},
-    {0.55, 0.55, 0.55},
-    {0.70, 0.70, 0.70},
-    0.25
-};
-
-Material mat_chrome = {
-    {0.25, 0.25, 0.25},
-    {0.4, 0.4, 0.4},
-    {0.774597, 0.774597, 0.774597},
-    0.6
-};
-
-Material mat_white_rubber = {
-    {0.05, 0.05, 0.05},
-    {0.5, 0.5, 0.5},
-    {0.7, 0.7, 0.7},
-    0.078125
-};
-
-typedef enum {
-    PLASTIC,
-    METAL,
-    RUBBER,
-} MaterialType;
-
-Material mat_make(Material base_material, vec3 color){
-    Material mat = {};
-
-    glm_vec3_mul(base_material.ambient, color, mat.ambient);
-    glm_vec3_mul(base_material.diffuse, color, mat.diffuse);
-    glm_vec3_mul(base_material.specular, color, mat.specular);
-    mat.shininess = base_material.shininess;
-
-    return mat;
-}
 
 /* A simple function that prints a message, the error code returned by SDL,
  * and quits the application */
@@ -128,68 +91,6 @@ u32 bind_texture_info(LoadedImage image) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     return texture;
-}
-
-void __gen_face_normal(vec3 v1, vec3 v2, vec3 v3, vec3 result) {
-    vec3 v1v2;
-    vec3 v1v3;
-    glm_vec3_sub(v2, v1, v1v2);
-    glm_vec3_sub(v3, v1, v1v3);
-    glm_vec3_cross(v1v2, v1v3, result);
-    glm_vec3_norm(result);
-}
-
-Array<f32> v_gen_normals(Array<f32> vertices) {
-    Array<f32> result;
-    array_init(&result, vertices.len);
-
-    for (u32 i=0; i<vertices.len-8; i+=9) {
-        vec3 v1 = { vertices[i+0], vertices[i+1], vertices[i+2] };
-        vec3 v2 = { vertices[i+3], vertices[i+4], vertices[i+5] };
-        vec3 v3 = { vertices[i+6], vertices[i+7], vertices[i+8] };
-
-        vec3 normal;
-        __gen_face_normal(v1, v2, v3, normal);
-        array_push(&result, normal[0]); array_push(&result, normal[1]); array_push(&result, normal[2]);
-        array_push(&result, normal[0]); array_push(&result, normal[1]); array_push(&result, normal[2]);
-        array_push(&result, normal[0]); array_push(&result, normal[1]); array_push(&result, normal[2]);
-    }
-
-    return result;
-}
-
-void __interpolate_normals(Array<f32> normals, Array<u32> indices) {
-    Array<f32> result;
-
-    u32 max_i = 0;
-    for (u32 i=0; i<indices.len; i++)
-        if (max_i<indices[i]) max_i=indices[i];
-    array_init_with(&result, 0.0f, max_i * 3);
-    array_fill_with(&result, 0.0f, max_i * 3);
-
-    for (u32 i=0; i<indices.len; i++) {
-        u32 _i = indices[i];
-        f32 x=normals[i*3+0], y=normals[i*3+1], z=normals[i*3+2];
-        result[_i+0]+=x; result[_i+1]+=y; result[_i+2]+=z;
-    }
-
-    for (u32 i=0; i<result.len-3; i+=3) {
-        vec3 vn = { result[i+0], result[i+1], result[i+2] };
-        glm_vec3_normalize(vn);
-        result[i+0]=vn[0]; result[i+1]=vn[1]; result[i+2]=vn[2];
-    }
-
-    for (u32 i=0; i<indices.len; i++) {
-        const u32 _i = indices[i];
-        normals[i*3+0] = result[_i+0];
-        normals[i*3+1] = result[_i+1];
-        normals[i*3+2] = result[_i+2];
-    }
-
-    IO_LOG(stdout, "vn = %d, idxs = %d, result = %d\n",
-            normals.len/3, indices.len, result.len);
-
-    array_free(&result);
 }
 
 Array<f32> zip_v_vn_tex(Array<f32> vertices, Array<f32> normals, Array<f32> texcoords) {
@@ -261,56 +162,6 @@ int main(int argc, char *argv[]) {
     // This makes our buffer swap syncronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
 
-    f32 cube_vertices[] = {
-        // Back quad
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-
-        // Front quad
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-
-        // Left side quad
-        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-
-        // Right side quad
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-
-        // Bottom quad
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-
-        // Top quad
-         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-    };
-    
     auto texture_data = io_read_image_file("./res/models/lambo/lambo_diffuse.png");
     u32 _texture = bind_texture_info(texture_data);
     stbi_image_free(texture_data.data);
@@ -342,8 +193,8 @@ int main(int argc, char *argv[]) {
         auto indices = wf_model_extract_indices(&mymodel);
         auto vertices = wf_model_extract_vertices(&mymodel);
         auto texcoords = wf_model_extract_texcoords(&mymodel);
-        auto normals = v_gen_normals(vertices);
-        __interpolate_normals(normals, indices);
+        auto normals = mu_gen_normals(vertices);
+        mu_interpolate_normals(normals, indices);
 
         rendering_data = zip_v_vn_tex(vertices, normals, texcoords);
 
@@ -353,31 +204,17 @@ int main(int argc, char *argv[]) {
         array_free(&normals);
         array_free(&texcoords);
     }
-
     printf("[MODEL_INFO]: no. triangles = %d\n", (rendering_data.len/6)/3);
 
     // Light coloring and shader stuff
-    Material material = mat_make(mat_white_plastic,
+    Material material = mat_make(MAT_CHROME,
             (vec3) { 1.0f, .7f, 0.0f });
 
     RenderMe rme = rdrme_create(rendering_data,
         RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
         material);
+    rme.debug_draw = TRUE;
     glm_vec3_copy((vec3) { .05f, .05f, .05f }, rme.transform.scale);
-
-    Array<f32> vertices_arr = array_from_copy(cube_vertices, RAW_ARRAY_LEN(cube_vertices));
-
-    Material debug_material = mat_make(mat_chrome, (vec3) { 0.0f, 0.0f, 1.0f });
-    RenderMe debug_box = rdrme_create(
-        vertices_arr,
-        RDRME_LIGHT | RDRME_NORMAL,
-        debug_material
-        );
-
-    const f32 scale_coeff = 0.05;
-    debug_box.transform.scale[0] = scale_coeff;
-    debug_box.transform.scale[1] = scale_coeff;
-    debug_box.transform.scale[2] = scale_coeff;
 
     Renderer renderer = rdr_init(&camera, win_width, win_height);
     camera_init(renderer.camera, camera_pos);
@@ -394,13 +231,6 @@ int main(int argc, char *argv[]) {
     Scene main_scene = scene_init();
     scene_add_point_light(&main_scene, main_light);
     scene_add_directional_light(&main_scene, dir_light);
-
-    Material box_material = mat_make(mat_white_plastic, light_color);
-    RenderMe simple_box = rdrme_create(
-        vertices_arr,
-        RDRME_LIGHT | RDRME_NORMAL,
-        box_material
-        );
 
     while (running) {
         last_time = now_time;
@@ -456,26 +286,7 @@ int main(int argc, char *argv[]) {
                 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // TEMP: debug draw object vertices
-        for (u32 i=0; i<mymodel.vertices.len-3; i+=3) {
-            glm_vec3_copy((vec3) {
-                    mymodel.vertices[i+0] * rme.transform.scale[0],
-                    mymodel.vertices[i+1] * rme.transform.scale[1],
-                    mymodel.vertices[i+2] * rme.transform.scale[2]
-                    },
-                    debug_box.transform.translation);
-            glm_vec3_rotate(debug_box.transform.translation, glm_rad(rme.transform.rotation[2]), (vec3){ 0.0f, 0.0f, 1.0f });
-            glm_vec3_rotate(debug_box.transform.translation, glm_rad(rme.transform.rotation[1]), (vec3){ 0.0f, 1.0f, 0.0f });
-            glm_vec3_rotate(debug_box.transform.translation, glm_rad(rme.transform.rotation[0]), (vec3){ 1.0f, 0.0f, 0.0f });
-            glm_vec3_add(debug_box.transform.translation, rme.transform.translation, debug_box.transform.translation);
-            glm_vec3_copy(rme.transform.rotation, debug_box.transform.rotation);
-            rdr_draw(&renderer, &main_scene, &debug_box);
-        }
-
-        glm_vec3_copy(main_scene.point_lights[0].position, simple_box.transform.translation);
-
         rdr_draw(&renderer, &main_scene, &rme);
-        rdr_draw(&renderer, &main_scene, &simple_box);
 
         for (u32 n_lambos=0; n_lambos<1; n_lambos++) {
             glm_vec3_copy((vec3) { 40.0f * (f32)n_lambos, 0.0f, 0.0f }, rme.transform.translation);

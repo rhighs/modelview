@@ -144,7 +144,18 @@ Array<T> array_from_copy(T *data, u32 len) {
     result.len = len;
     const u32 capacity = sizeof(T) * len;
     result.data = (T *)malloc(capacity);
+    result.capacity = capacity;
     memcpy(result.data, data, sizeof(data[0]) * len);
+    return result;
+}
+
+template<typename T>
+Array<T> array_from(T *data, u32 len) {
+    Array<T> result;
+    result.len = len;
+    const u32 capacity = sizeof(T) * len;
+    result.data = data;
+    result.capacity = capacity;
     return result;
 }
 
