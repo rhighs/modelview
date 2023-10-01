@@ -7,12 +7,6 @@
 #include "array.h"
 #include "material.h"
 
-struct Mesh {
-    u32 vertex_count;
-    Array<u32> indices;
-    Array<f32> vertices;
-};
-
 struct Transform {
     vec3 scale;
     vec3 rotation;
@@ -36,13 +30,25 @@ enum RendermeShaderType : u32 {
 struct RenderMe {
     Material material;
     Transform transform;
-    Mesh mesh;
-    RendermeShaderType shader_type;
     u32 vao;
+    RendermeShaderType shader_type;
+
+    // Defines rendering order for shader_data
+    // Defaults to triangles if len = 0
+    Array<f32> shader_indices;
+
+    // Data for shader attributes
+    Array<f32> shader_data;
+
+    // The shader vertex count (n. times a vshader gets called)
+    u32 shader_count;
+
+    // Enables debug visualization for vertex positions
     b8 debug_draw;
+    Array<f32> debug_points;
 };
 
-// Functions here should take care of which fragment shader to use
+// This function right here should take care of which fragment shader to use
 RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material);
 
 #endif // RENDERME_H

@@ -188,29 +188,28 @@ void __rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
     sp_set_uniform_vec3f(program, "eye.position", renderer->camera->pos);
 
     glBindVertexArray(renderme->vao);
-    if (renderme->mesh.indices.len == 0) {
+    if (renderme->shader_indices.len == 0) {
         // Vertex count is to be intented as the "attribute" unit or whatever.
         // As a question: how many "vertex shader" calls there will be? vertex_count shader calls
  #ifdef RDR_DEBUG
-        fprintf(stdout, "[%s:%s:%d]: rendering vertex count = %d\n", __FILE__, __FUNCTION__, __LINE__, renderme->mesh.vertex_count);
+        fprintf(stdout, "[%s:%s:%d]: rendering vertex count = %d\n", __FILE__, __FUNCTION__, __LINE__, renderme->shader_count);
  #endif
-        glDrawArrays(GL_TRIANGLES, 0, renderme->mesh.vertex_count);
+        glDrawArrays(GL_TRIANGLES, 0, renderme->shader_count);
     }
 }
 
 void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
-#if 0
     if (renderme->debug_draw) {
-        const f32 scale_coeff = 0.05;
+        const f32 scale_coeff = 0.02;
         __debug_box.transform.scale[0] = scale_coeff;
         __debug_box.transform.scale[1] = scale_coeff;
         __debug_box.transform.scale[2] = scale_coeff;
         // TEMP: debug draw object vertices
-        for (u32 i=0; i<renderme->mesh.vertices.len-3; i+=3) {
+        for (u32 i=0; i<renderme->debug_points.len-3; i+=3) {
             glm_vec3_copy((vec3) {
-                    renderme->mesh.vertices[i+0] * renderme->transform.scale[0],
-                    renderme->mesh.vertices[i+1] * renderme->transform.scale[1],
-                    renderme->mesh.vertices[i+2] * renderme->transform.scale[2]
+                    renderme->debug_points[i+0] * renderme->transform.scale[0],
+                    renderme->debug_points[i+1] * renderme->transform.scale[1],
+                    renderme->debug_points[i+2] * renderme->transform.scale[2]
                     },
                     __debug_box.transform.translation);
             glm_vec3_rotate(__debug_box.transform.translation, glm_rad(renderme->transform.rotation[2]), (vec3){ 0.0f, 0.0f, 1.0f });
@@ -221,7 +220,6 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
             __rdr_draw(renderer, scene, &__debug_box);
         }
     }
-#endif
 
     __rdr_draw(renderer, scene, renderme);
 }

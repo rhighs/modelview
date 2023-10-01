@@ -103,11 +103,12 @@ RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material) {
     glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, result.transform.translation);
     glm_vec3_copy((vec3) { 1.0f, 1.0f, 1.0f }, result.transform.scale);
 
-    array_init(&result.mesh.indices, 4);
+    // TODO: indices should be given from caller
+    array_init(&result.shader_indices, 4);
 
     // FIXME: ownership is outside!
-    result.mesh.vertices = data;
-    result.mesh.vertex_count = data.len / DATA_LINE_LENGTH;
+    result.shader_data = data;
+    result.shader_count = data.len / DATA_LINE_LENGTH;
 
     result.material = material;
     result.vao = VAO;

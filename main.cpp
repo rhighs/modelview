@@ -187,6 +187,8 @@ int main(int argc, char *argv[]) {
             mymodel.normals.len,
             mymodel.tex_coords.len,
             mymodel.faces.len);
+
+    Array<f32> debug_points = mymodel.vertices;
     Array<f32> rendering_data;
     {
         auto result = wf_model_zip_v_vn_tex(&mymodel);
@@ -195,7 +197,6 @@ int main(int argc, char *argv[]) {
         auto texcoords = wf_model_extract_texcoords(&mymodel);
         auto normals = mu_gen_normals(vertices);
         mu_interpolate_normals(normals, indices);
-
         rendering_data = zip_v_vn_tex(vertices, normals, texcoords);
 
         array_free(&result);
@@ -213,7 +214,9 @@ int main(int argc, char *argv[]) {
     RenderMe rme = rdrme_create(rendering_data,
         RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
         material);
-    rme.debug_draw = TRUE;
+    rme.debug_draw = FALSE;
+    rme.debug_points = debug_points;
+
     glm_vec3_copy((vec3) { .05f, .05f, .05f }, rme.transform.scale);
 
     Renderer renderer = rdr_init(&camera, win_width, win_height);
@@ -286,9 +289,7 @@ int main(int argc, char *argv[]) {
                 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        rdr_draw(&renderer, &main_scene, &rme);
-
-        for (u32 n_lambos=0; n_lambos<1; n_lambos++) {
+        for (u32 n_lambos=0; n_lambos<10; n_lambos++) {
             glm_vec3_copy((vec3) { 40.0f * (f32)n_lambos, 0.0f, 0.0f }, rme.transform.translation);
             rdr_draw(&renderer, &main_scene, &rme);
         }
