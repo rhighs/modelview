@@ -214,8 +214,7 @@ int main(int argc, char *argv[]) {
     RenderMe rme = rdrme_create(rendering_data,
         RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
         material);
-    rme.debug_draw = FALSE;
-    rme.debug_points = debug_points;
+    rdrme_setup_debug(&rme, debug_points);
 
     glm_vec3_copy((vec3) { .05f, .05f, .05f }, rme.transform.scale);
 

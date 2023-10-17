@@ -20,11 +20,13 @@ enum _RenderMeFlags {
     RDRME_TEXTURE   = 0x1 << 2,
     RDRME_NORMAL    = 0x1 << 3,
     RDRME_BLANK     = 0x1 << 4,
+    RDRME_DEBUG     = 0x1 << 5,
 };
 
 enum RendermeShaderType : u32 {
     SHADER_LIGHT_VN  = 0x0,
     SHADER_LIGHT_VNT = 0x1,
+    SHADER_DEBUG_V   = 0x2
 };
 
 struct RenderMe {
@@ -44,11 +46,23 @@ struct RenderMe {
     u32 shader_count;
 
     // Enables debug visualization for vertex positions
-    b8 debug_draw;
-    Array<f32> debug_points;
+    b8 show_debug;
+
+    // debug fragment color
+    vec3 debug_color;
+
+    // debug VAO
+    u32 debug_VAO;
+
+    // debug glDrawArrays count argument
+    u32 debug_shader_count;
 };
 
 // This function right here should take care of which fragment shader to use
 RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material);
+
+// Setup debug points, instantiates a VBO and attaches a very simple shader program
+// to render basic shape representing points in the object
+void rdrme_setup_debug(RenderMe *renderme, Array<f32> debug_points);
 
 #endif // RENDERME_H
