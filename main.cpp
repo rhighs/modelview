@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
     // This makes our buffer swap syncronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
 
-    auto texture_data = io_read_image_file("./res/models/lambo/lambo_diffuse.png");
+    auto texture_data = io_read_image_file("./res/models/chungus/chungus.png");
     u32 _texture = bind_texture_info(texture_data);
     stbi_image_free(texture_data.data);
     
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
 
     Camera camera;
 
-    OBJModel mymodel = wf_load_obj_model("./res/models/lambo/lambo.obj");
+    OBJModel mymodel = wf_load_obj_model("./res/models/chungus/chungus.obj");
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
@@ -234,6 +234,12 @@ int main(int argc, char *argv[]) {
     scene_add_point_light(&main_scene, main_light);
     scene_add_directional_light(&main_scene, dir_light);
 
+    f64 debug_last_toggle = 0.0;
+
+    Array<RenderMe *> render_list;
+    array_init(&render_list, 32);
+    array_push(&render_list, &rme);
+
     while (running) {
         last_time = now_time;
         now_time = SDL_GetPerformanceCounter();
@@ -271,6 +277,14 @@ int main(int argc, char *argv[]) {
             }
         }
 
+        if (io_is_key_pressed(SDL_SCANCODE_F4) && debug_last_toggle > .1) {
+            for (u32 rdr_i=0; rdr_i<render_list.len; rdr_i++)
+                render_list[rdr_i]->show_debug = !render_list[rdr_i]->show_debug;
+            debug_last_toggle = 0.0;
+        } else {
+            debug_last_toggle += dt_secs;
+        }
+
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
         camera_update(renderer.camera, dt_secs);
 
@@ -288,9 +302,9 @@ int main(int argc, char *argv[]) {
                 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        for (u32 n_lambos=0; n_lambos<10; n_lambos++) {
-            glm_vec3_copy((vec3) { 40.0f * (f32)n_lambos, 0.0f, 0.0f }, rme.transform.translation);
-            rdr_draw(&renderer, &main_scene, &rme);
+        for (u32 rdr_i=0; rdr_i<render_list.len; rdr_i++) {
+            RenderMe *renderme = render_list[rdr_i];
+            rdr_draw(&renderer, &main_scene, renderme);
         }
 
         SDL_GL_SwapWindow(mainwindow);

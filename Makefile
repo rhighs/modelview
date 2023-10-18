@@ -7,7 +7,7 @@ INCLUDE:=-I$(EXT)/SDL/include -I$(EXT)/glad/include -I$(EXT)/stb -I$(EXT)/cglm/i
 LDFLAGS:=-lSDL2 -lSDL2main -lGL -lm
 CXXFLAGS:=-std=c++17 -Wall
 OBJ:=$(LIBPATH)/glad/glad.o
-PROG:=minescam
+PROG:=gltest
 
 all: SDL glad
 	$(CXX) $(CXXFLAGS) $(SOURCE) $(OBJ) $(LDPATHS) $(INCLUDE) $(LDFLAGS) -o $(PROG)

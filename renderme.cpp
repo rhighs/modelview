@@ -131,20 +131,27 @@ u32 __debug_vao(Array<f32> data) {
     return VAO;
 }
 
+#define DEBUG_SCALE 0.2f
 Array<f32> __create_debug_vertices(Array<f32> debug_positions, Array<f32> debug_cube_verts) {
     Array<f32> result;
     array_init(&result, 32);
 
     for (u32 i=0; i<debug_positions.len-2; i+=3) {
         for (u32 j=0; j<debug_cube_verts.len-2; j+=3) {
-            array_push(&result, debug_positions[i+0] + debug_cube_verts[j+0]);
-            array_push(&result, debug_positions[i+1] + debug_cube_verts[j+1]);
-            array_push(&result, debug_positions[i+2] + debug_cube_verts[j+2]);
+            vec3 v = {debug_cube_verts[j+0],
+                           debug_cube_verts[j+1],
+                           debug_cube_verts[j+2]};
+            glm_vec3_scale(v, DEBUG_SCALE, v);
+            glm_vec3_add(v, (vec3){debug_positions[i+0], debug_positions[i+1], debug_positions[i+2]}, v);
+            array_push(&result, v[0]);
+            array_push(&result, v[1]);
+            array_push(&result, v[2]);
         }
     }
 
     return result;
 }
+#undef DEBUG_SCALE
 
 void rdrme_setup_debug(RenderMe *renderme, Array<f32> debug_points) {
     renderme->show_debug = TRUE;
