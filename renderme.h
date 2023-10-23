@@ -65,4 +65,8 @@ RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material);
 // to render basic shape representing points in the object
 void rdrme_setup_debug(RenderMe *renderme, Array<f32> debug_points);
 
+// Clones a renderme data exluding shader data
+// Enables a somewhat acceptable instanticing behavior
+void rdrme_clone(RenderMe *cloneme, RenderMe *dest);
+
 #endif // RENDERME_H

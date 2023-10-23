@@ -1,3 +1,5 @@
+#include <memory.h>
+
 #include "renderme.h"
 #include "array.h"
 #include "cglm/vec3.h"
@@ -225,3 +227,8 @@ RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material) {
     return result;
 }
 #undef CHECKFLAG
+
+void rdrme_clone(RenderMe *cloneme, RenderMe *dest) {
+    memcpy((void *)dest, (void *)cloneme, sizeof(RenderMe));
+}
+

@@ -162,8 +162,8 @@ int main(int argc, char *argv[]) {
     // This makes our buffer swap syncronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
 
-    auto texture_data = io_read_image_file("./res/models/chungus/chungus.png");
-    u32 _texture = bind_texture_info(texture_data);
+    auto texture_data = io_read_image_file("./res/models/lambo/lambo.png");
+    bind_texture_info(texture_data);
     stbi_image_free(texture_data.data);
     
     glActiveTexture(GL_TEXTURE0);
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
 
     Camera camera;
 
-    OBJModel mymodel = wf_load_obj_model("./res/models/chungus/chungus.obj");
+    OBJModel mymodel = wf_load_obj_model("./res/models/lambo/lambo.obj");
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len,
             mymodel.normals.len,
@@ -212,7 +212,9 @@ int main(int argc, char *argv[]) {
             (vec3) { 1.0f, .7f, 0.0f });
 
     RenderMe rme = rdrme_create(rendering_data,
-        RDRME_LIGHT | RDRME_TEXTURE | RDRME_NORMAL,
+        RDRME_LIGHT
+        | RDRME_TEXTURE
+        | RDRME_NORMAL,
         material);
     rdrme_setup_debug(&rme, debug_points);
 
@@ -257,7 +259,7 @@ int main(int argc, char *argv[]) {
                     const u32 h = event.window.data2;
                     win_width = w;
                     win_height = h;
-                    renderer.vp_width= w;
+                    renderer.vp_width = w;
                     renderer.vp_height = h;
                     glViewport(0, 0, w, h);
                     break;
