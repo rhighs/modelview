@@ -93,24 +93,6 @@ u32 bind_texture_info(LoadedImage image) {
     return texture;
 }
 
-Array<f32> zip_v_vn_tex(Array<f32> vertices, Array<f32> normals, Array<f32> texcoords) {
-    printf("%d %d %d\n", vertices.len, normals.len, texcoords.len);
-    assert(vertices.len == normals.len && texcoords.len/2 == vertices.len/3);
-
-    Array<f32> result;
-    const u32 len = texcoords.len + normals.len + vertices.len;
-    array_init(&result, len);
-
-    u32 vi=0, vni=0, texi=0;
-    for (;result.len<len;) {
-        array_push(&result, vertices[vi++]); array_push(&result, vertices[vi++]); array_push(&result, vertices[vi++]);
-        array_push(&result, normals[vni++]); array_push(&result, normals[vni++]); array_push(&result, normals[vni++]);
-        array_push(&result, texcoords[texi++]); array_push(&result, texcoords[texi++]);
-    }
-
-    return result;
-}
-
 int main(int argc, char *argv[]) {
     SDL_Window *mainwindow;
     SDL_GLContext maincontext;
@@ -189,33 +171,12 @@ int main(int argc, char *argv[]) {
             mymodel.faces.len);
 
     Array<f32> debug_points = mymodel.vertices;
-    Array<f32> rendering_data;
-    {
-        auto result = wf_model_zip_v_vn_tex(&mymodel);
-        auto indices = wf_model_extract_indices(&mymodel);
-        auto vertices = wf_model_extract_vertices(&mymodel);
-        auto texcoords = wf_model_extract_texcoords(&mymodel);
-        auto normals = mu_gen_normals(vertices);
-        mu_interpolate_normals(normals, indices);
-        rendering_data = zip_v_vn_tex(vertices, normals, texcoords);
-
-        array_free(&result);
-        array_free(&indices);
-        array_free(&vertices);
-        array_free(&normals);
-        array_free(&texcoords);
-    }
-    printf("[MODEL_INFO]: no. triangles = %d\n", (rendering_data.len/6)/3);
 
     // Light coloring and shader stuff
     Material material = mat_make(MAT_CHROME,
             (vec3) { 1.0f, .7f, 0.0f });
 
-    RenderMe rme = rdrme_create(rendering_data,
-        RDRME_LIGHT
-        | RDRME_TEXTURE
-        | RDRME_NORMAL,
-        material);
+    RenderMe rme = rdrme_from_obj(&mymodel, material, TRUE, TRUE);
     rdrme_setup_debug(&rme, debug_points);
 
     glm_vec3_copy((vec3) { .05f, .05f, .05f }, rme.transform.scale);

@@ -90,6 +90,19 @@ void array_realloc(Array<T> *arr) {
 }
 
 template<typename T>
+void array_realloc_for(Array<T> *arr, u32 capacity) {
+    if (arr->capacity >= capacity) {
+        return;
+    }
+    T *base = (T *)realloc((void *)(arr->data), capacity);
+    if (base == NULL) {
+        fprintf(stderr, "[%s:%s:%d] Failed array realloc, not enough memory", __FILE_NAME__, __FUNCTION__, __LINE__);
+    }
+    arr->data = base;
+    arr->capacity = capacity;
+}
+
+template<typename T>
 void array_push(Array<T> *arr, T value) {
     if (arr->len * sizeof(T) >= arr->capacity) {
         array_realloc(arr);
@@ -157,6 +170,16 @@ Array<T> array_from(T *data, u32 len) {
     result.data = data;
     result.capacity = capacity;
     return result;
+}
+
+template<typename T>
+void array_append(Array<T> *dst, Array<T> src) {
+    if (src.len == 0) {
+        return;
+    }
+
+    array_realloc_for(dst, dst->capacity + (src.len * sizeof(T)));
+    memcpy((u8 *)(dst->data + dst->len), (u8 *)src.data, sizeof(T) * src.len);
 }
 
 template<typename T>

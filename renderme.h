@@ -6,6 +6,7 @@
 #include "types.h"
 #include "array.h"
 #include "material.h"
+#include "wavefront.h"
 
 struct Transform {
     vec3 scale;
@@ -68,5 +69,9 @@ void rdrme_setup_debug(RenderMe *renderme, Array<f32> debug_points);
 // Clones a renderme data exluding shader data
 // Enables a somewhat acceptable instanticing behavior
 void rdrme_clone(RenderMe *cloneme, RenderMe *dest);
+
+// Creates a renderme object from an obj model data
+RenderMe rdrme_from_obj(OBJModel *model, Material material,
+        b8 gen_normals, b8 interp_normals);
 
 #endif // RENDERME_H
