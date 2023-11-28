@@ -7,6 +7,10 @@
 
 // operators and overloads
 // ---------------------------------------------------
+String::~String() {
+    free(this->data);
+}
+
 char String::operator[](u32 at) {
     assert(at < len && "Array out of bounds access");
     return data[at];

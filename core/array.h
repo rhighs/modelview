@@ -15,6 +15,7 @@
 template<typename T>
 struct Array {
     T& operator[](u32 index);
+    ~Array();
 
     T *data;
     u32 capacity;

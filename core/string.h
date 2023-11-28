@@ -11,6 +11,8 @@ struct String {
     u32 capacity;
     char *data;
 
+    ~String();
+
     char operator[](u32 at);
 };
 

@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include "types.h"
 
+template<typename T>
+Array<>::~Array() { free(this->data); }
+
 #define DEF_ARR_T_SPEC(TYPE, FMT)\
 template<>\
 void array_print(Array<TYPE> *arr) {\
