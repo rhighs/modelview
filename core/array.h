@@ -9,37 +9,80 @@
 #include <sys/types.h>
 
 #include "types.h"
+#include "error.h"
+#include "container.h"
 
 #define RAW_ARRAY_LEN(__ARR) (sizeof(__ARR)/sizeof(__ARR[0]))
 
 template<typename T>
 struct Array {
+    Container<T> _c_data;
+
     T& operator[](u32 index);
-    ~Array();
 
-    T *data;
-    u32 capacity;
-    u32 len;
-};
+    ~Array() { _c_data.free() }
 
-template <typename T>
-T& Array<T>::operator[](u32 index) {
-    assert(index < len && "Array out of bounds access");
-    return data[index];
+    _FORCE_INLINE_ u32 len() const { return _c_data.len(); }
+    void push_back(const T &value) { return _c_data.push_back(value); }
+    T pop_back() { return _c_data.pop_back(); }
 }
 
 template<typename T>
-u32 array_len(Array<T> *arr) {
+Array<T>::operator[](u32 index) {
+    ASSERT(index < _c_data.len(), "index cannot be out of array bounds");
+    return (_c_data.get_value(index));
+}
+
+template<typename T>
+struct Array_ {
+    T *_raw_data;
+    u32 _capacity;
+    u32 _len;
+
+    T& operator[](u32 index);
+    ~Array_();
+
+    Array_(u32 count) { array_init(this, count); }
+    Array_(const T &value, u32 count) { array_fill_with(this, value, count); }
+
+    _FORCE_INLINE_ u32 len() { return len; }
+    _FORCE_INLINE_ u32 capacity() { return this->capacity; }
+    _FORCE_INLINE_ void fill();
+    _FORCE_INLINE_ void from(T *raw_data, u32 count);
+};
+
+template<typename T>
+_FORCE_INLINE_ void Array_<T>::fill() {
+    for (u32 i=0; i<arr->_len; i++)
+        this->_raw_data[i] = value;
+}
+
+template<typename T>
+_FORCE_INLINE_ void Array_<T>::from(T *raw_data, u32 count) {
+}
+
+template <typename T>
+T& Array_<T>::operator[](u32 index) {
+    assert(index < len && "Array_ out of bounds access");
+    return data[index];
+}
+
+/*
+===================== CLIKE INTERFACES =====================
+*/
+
+template<typename T>
+u32 array_len(Array_<T> *arr) {
     return arr->len;
 }
 
 template<typename T>
-u32 array_capacity(Array<T> *arr) {
+u32 array_capacity(Array_<T> *arr) {
     return arr->capacity;
 }
 
 template<typename T>
-void array_init(Array<T> *arr, u32 count) {
+void array_init(Array_<T> *arr, u32 count) {
     const u32 capacity = sizeof(T) * count;
     arr->data = (T *)malloc(capacity);
     memset(arr->data, 0, capacity);
@@ -49,7 +92,7 @@ void array_init(Array<T> *arr, u32 count) {
 }
 
 template<typename T>
-void array_init_with(Array<T> *arr, T value, u32 count) {
+void array_init_with(Array_<T> *arr, T value, u32 count) {
     const u32 capacity = sizeof(T) * count;
     arr->data = (T *)malloc(capacity);
     memset(arr->data, 0, capacity);
@@ -61,7 +104,7 @@ void array_init_with(Array<T> *arr, T value, u32 count) {
 }
 
 template<typename T>
-void array_fill_with(Array<T> *arr, T value, u32 count) {
+void array_fill_with(Array_<T> *arr, T value, u32 count) {
     const u32 needed = sizeof(T) * count;
     if (arr->capacity < needed) {
         array_realloc(arr);
@@ -74,13 +117,13 @@ void array_fill_with(Array<T> *arr, T value, u32 count) {
 }
 
 template<typename T>
-void array_fill(Array<T> *arr, T value) {
+void array_fill(Array_<T> *arr, T value) {
     for (u32 i=0; i<arr->len; i++)
         arr->data[i] = value;
 }
 
 template<typename T>
-void array_realloc(Array<T> *arr) {
+void array_realloc(Array_<T> *arr) {
     const u32 new_capacity = (arr->len+arr->len/2) * sizeof(T);
     T *base = (T *)realloc((void *)(arr->data), new_capacity);
     if (base == NULL) {
@@ -91,7 +134,7 @@ void array_realloc(Array<T> *arr) {
 }
 
 template<typename T>
-void array_realloc_for(Array<T> *arr, u32 capacity) {
+void array_realloc_for(Array_<T> *arr, u32 capacity) {
     if (arr->capacity >= capacity) {
         return;
     }
@@ -104,7 +147,7 @@ void array_realloc_for(Array<T> *arr, u32 capacity) {
 }
 
 template<typename T>
-void array_push(Array<T> *arr, T value) {
+void array_push(Array_<T> *arr, T value) {
     if (arr->len * sizeof(T) >= arr->capacity) {
         array_realloc(arr);
     }
@@ -113,26 +156,26 @@ void array_push(Array<T> *arr, T value) {
 }
 
 template<typename T>
-T array_pop(Array<T> *arr) {
+T array_pop(Array_<T> *arr) {
     const T value = arr->data[arr->len-1];
     arr->len--;
     return value;
 }
 
 template<typename T>
-void array_reset(Array<T> *arr) {
+void array_reset(Array_<T> *arr) {
     arr->len = 0;
 }
 
 template<typename T>
-void array_free(Array<T> *arr) {
+void array_free(Array_<T> *arr) {
     arr->len = 0;
     arr->capacity = 0;
     free(arr->data);
 }
 
 template<typename T>
-u32 array_count(Array<T> *arr, T countme) {
+u32 array_count(Array_<T> *arr, T countme) {
     u32 result = 0;
     for (u32 i=0; i<arr->len; i++)
         if (arr->data[i] == countme) result++;
@@ -140,8 +183,8 @@ u32 array_count(Array<T> *arr, T countme) {
 }
 
 template<typename T>
-Array<T> array_zip(Array<T> a, Array<T> b) {
-    Array<T> result;
+Array_<T> array_zip(Array_<T> a, Array_<T> b) {
+    Array_<T> result;
     u32 minl = a.len > b.len ? b.len : a.len;
     array_init(&result, minl * 2);
     for (u32 i=0; i<minl; i++) {
@@ -152,9 +195,9 @@ Array<T> array_zip(Array<T> a, Array<T> b) {
 }
 
 template<typename T>
-Array<T> array_from_copy(T *data, u32 len) {
+Array_<T> array_from_copy(T *data, u32 len) {
     assert(len > 0 && "Wym copy from length = 0 ??");
-    Array<T> result;
+    Array_<T> result;
     result.len = len;
     const u32 capacity = sizeof(T) * len;
     result.data = (T *)malloc(capacity);
@@ -164,8 +207,8 @@ Array<T> array_from_copy(T *data, u32 len) {
 }
 
 template<typename T>
-Array<T> array_from(T *data, u32 len) {
-    Array<T> result;
+Array_<T> array_from(T *data, u32 len) {
+    Array_<T> result;
     result.len = len;
     const u32 capacity = sizeof(T) * len;
     result.data = data;
@@ -174,7 +217,7 @@ Array<T> array_from(T *data, u32 len) {
 }
 
 template<typename T>
-void array_append(Array<T> *dst, Array<T> src) {
+void array_append(Array_<T> *dst, Array_<T> src) {
     if (src.len == 0) {
         return;
     }
@@ -184,6 +227,6 @@ void array_append(Array<T> *dst, Array<T> src) {
 }
 
 template<typename T>
-void array_print(Array<T> *arr) {};
+void array_print(Array_<T> *arr) {};
 #endif
 

@@ -14,9 +14,6 @@ struct LoadedImage {
     u8 *data;
 };
 
-#define IO_LOG(STREAM, FMT, ...)\
-        do{fprintf(STREAM, "[%s:%s:%d]: " FMT "\n", __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__);}while(0)
-
 b8 io_is_key_pressed(SDL_Scancode code);
 
 void io_change_state(SDL_Scancode code, b8 pressed);

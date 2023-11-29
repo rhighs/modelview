@@ -4,7 +4,7 @@
 #include "types.h"
 
 template<typename T>
-Array<>::~Array() { free(this->data); }
+Array<T>::~Array() { free(this->data); }
 
 #define DEF_ARR_T_SPEC(TYPE, FMT)\
 template<>\
