@@ -1,0 +1,25 @@
+#include "vec.h"
+
+#include <stdio.h>
+#include "types.h"
+// #define DEF_ARR_T_SPEC(TYPE, FMT)\
+// template<>\
+// String Array<TYPE>::to_string(FILE where) {\
+//     fprintf(stdout, "[\n");\
+//     u32 j = 0;\
+//     for (u32 i=0; i<arr->len; i++) {\
+//         if (j == 0) fprintf(stdout, "   ");\
+//         fprintf(stdout, " " FMT ", ", (*arr)[i]);\
+//         j++;\
+//         if (j == 10) { j = 0; fprintf(stdout, "\n"); }\
+//     }\
+//     fprintf(stdout, "]\n");\
+// }\
+// 
+// DEF_ARR_T_SPEC(f32,     "%f")
+// DEF_ARR_T_SPEC(f64,     "%f")
+// DEF_ARR_T_SPEC(u8,      "%d")
+// DEF_ARR_T_SPEC(u16,     "%d")
+// DEF_ARR_T_SPEC(u32,     "%d")
+// DEF_ARR_T_SPEC(u64,     "%lld")
+

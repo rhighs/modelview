@@ -52,5 +52,5 @@ setup-clangd:
 
 .PHONY: clean
 clean:
-	rm -rf build *.so *.o *.a $(PROG)
+	rm -rf build *.so *.o *.a core/*.o $(PROG)
 

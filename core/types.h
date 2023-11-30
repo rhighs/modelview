@@ -21,13 +21,15 @@
 #endif
 #endif
 
+//https://www.gnu.org/software/gnulib/manual/html_node/Attributes.html
+//https://learn.microsoft.com/en-us/cpp/code-quality/annotating-function-behavior?view=msvc-170
 #ifndef _NO_DISCARD_
-#if defined(_MSC_VER)
+#if defined(__GNUC__)
+#define _NO_DISCARD_ __attribute__((__warn_unused_result__))
+#elif defined(_MSC_VER)
 #define _NO_DISCARD_ _Check_return_
-#elif defined(__GNUC__)
-#define _NO_DISCARD_ [[nodiscard]]
 #else
-#define _NO_DISCARD_ __attribute__((warn_unused_result))
+#define _NO_DISCARD_ [[nodiscard]]
 #endif
 #endif
 
