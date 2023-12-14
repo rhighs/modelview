@@ -4,7 +4,7 @@
 #include "types.h"
 // #define DEF_ARR_T_SPEC(TYPE, FMT)\
 // template<>\
-// String Array<TYPE>::to_string(FILE where) {\
+// String Vec<TYPE>::to_string(FILE where) {\
 //     fprintf(stdout, "[\n");\
 //     u32 j = 0;\
 //     for (u32 i=0; i<arr->len; i++) {\

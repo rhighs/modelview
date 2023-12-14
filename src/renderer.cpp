@@ -1,7 +1,7 @@
 #include <cglm/cglm.h>
 #include <glad/glad.h>
 
-#include "array.h"
+#include "core/vec.h"
 #include "renderer.h"
 #include "material.h"
 #include "renderme.h"

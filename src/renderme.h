@@ -4,7 +4,7 @@
 #include <cglm/cglm.h>
 
 #include "types.h"
-#include "array.h"
+#include "core/vec.h"
 #include "material.h"
 #include "wavefront.h"
 
@@ -38,10 +38,10 @@ struct RenderMe {
 
     // Defines rendering order for shader_data
     // Defaults to triangles if len = 0
-    Array<f32> shader_indices;
+    Vec<f32> shader_indices;
 
     // Data for shader attributes
-    Array<f32> shader_data;
+    Vec<f32> shader_data;
 
     // The shader vertex count (n. times a vshader gets called)
     u32 shader_count;
@@ -60,11 +60,11 @@ struct RenderMe {
 };
 
 // This function right here should take care of which fragment shader to use
-RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material);
+RenderMe rdrme_create(Vec<f32> data, RenderMeFlags flags, Material material);
 
 // Setup debug points, instantiates a VBO and attaches a very simple shader program
 // to render basic shape representing points in the object
-void rdrme_setup_debug(RenderMe *renderme, Array<f32> debug_points);
+void rdrme_setup_debug(RenderMe *renderme, Vec<f32> debug_points);
 
 // Clones a renderme data exluding shader data
 // Enables a somewhat acceptable instanticing behavior

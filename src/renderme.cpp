@@ -1,7 +1,7 @@
 #include <memory.h>
 
 #include "renderme.h"
-#include "array.h"
+#include "core/vec.h"
 #include "cglm/vec3.h"
 #include "io.h"
 
@@ -16,10 +16,10 @@
 #include  "shader.h"
 
 static
-Array<f32> zip_v_vn_tex(Array<f32> vertices, Array<f32> normals, Array<f32> texcoords) {
+Vec<f32> zip_v_vn_tex(Vec<f32> vertices, Vec<f32> normals, Vec<f32> texcoords) {
     assert(vertices.len == normals.len && texcoords.len/2 == vertices.len/3);
 
-    Array<f32> result;
+    Vec<f32> result;
     const u32 len = texcoords.len + normals.len + vertices.len;
     array_init(&result, len);
 
@@ -34,10 +34,10 @@ Array<f32> zip_v_vn_tex(Array<f32> vertices, Array<f32> normals, Array<f32> texc
 }
 
 static
-Array<f32> zip_v_vn(Array<f32> vertices, Array<f32> normals) {
+Vec<f32> zip_v_vn(Vec<f32> vertices, Vec<f32> normals) {
     assert(vertices.len == normals.len);
 
-    Array<f32> result;
+    Vec<f32> result;
     const u32 len = normals.len + vertices.len;
     array_init(&result, len);
 
@@ -51,10 +51,10 @@ Array<f32> zip_v_vn(Array<f32> vertices, Array<f32> normals) {
 }
 
 static
-Array<f32> zip_v_tex(Array<f32> vertices, Array<f32> texcoords) {
+Vec<f32> zip_v_tex(Vec<f32> vertices, Vec<f32> texcoords) {
     assert(texcoords.len/2 == vertices.len/3);
 
-    Array<f32> result;
+    Vec<f32> result;
     const u32 len = texcoords.len + vertices.len;
     array_init(&result, len);
 
@@ -134,7 +134,7 @@ u32 __bind_texture_info(LoadedImage image) {
     return texture;
 }
 
-u32 __norm_tex_vao(Array<f32> data) {
+u32 __norm_tex_vao(Vec<f32> data) {
     u32 VAO;
     u32 VBO;
     glGenBuffers(1, &VBO);
@@ -154,7 +154,7 @@ u32 __norm_tex_vao(Array<f32> data) {
     return VAO;
 }
 
-u32 __norm_vao(Array<f32> data) {
+u32 __norm_vao(Vec<f32> data) {
     u32 VAO;
     u32 VBO;
     glGenBuffers(1, &VBO);
@@ -172,7 +172,7 @@ u32 __norm_vao(Array<f32> data) {
     return VAO;
 }
 
-u32 __debug_vao(Array<f32> data) {
+u32 __debug_vao(Vec<f32> data) {
     u32 VAO;
     u32 VBO;
     glGenBuffers(1, &VBO);
@@ -189,8 +189,8 @@ u32 __debug_vao(Array<f32> data) {
 }
 
 #define DEBUG_SCALE 0.2f
-Array<f32> __create_debug_vertices(Array<f32> debug_positions, Array<f32> debug_cube_verts) {
-    Array<f32> result;
+Vec<f32> __create_debug_vertices(Vec<f32> debug_positions, Vec<f32> debug_cube_verts) {
+    Vec<f32> result;
     array_init(&result, 32);
 
     for (u32 i=0; i<debug_positions.len-2; i+=3) {
@@ -210,14 +210,14 @@ Array<f32> __create_debug_vertices(Array<f32> debug_positions, Array<f32> debug_
 }
 #undef DEBUG_SCALE
 
-void rdrme_setup_debug(RenderMe *renderme, Array<f32> debug_points) {
+void rdrme_setup_debug(RenderMe *renderme, Vec<f32> debug_points) {
     renderme->show_debug = TRUE;
 
     renderme->debug_color[0] = 0.0f;
     renderme->debug_color[1] = 0.0f;
     renderme->debug_color[2] = 1.0f;
 
-    Array<f32> debug_verts = __create_debug_vertices(
+    Vec<f32> debug_verts = __create_debug_vertices(
         debug_points, 
         array_from(
             __debug_cube_vertices,
@@ -231,7 +231,7 @@ void rdrme_setup_debug(RenderMe *renderme, Array<f32> debug_points) {
 }
 
 #define CHECKFLAG(A, B) ((A & B)!=0)
-RenderMe rdrme_create(Array<f32> data, RenderMeFlags flags, Material material) {
+RenderMe rdrme_create(Vec<f32> data, RenderMeFlags flags, Material material) {
     RenderMe result;
 
     u32 VAO = 0;
@@ -312,7 +312,7 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
     b8 has_texture = model->tex_coords.len > 0;
     b8 has_normals = model->normals.len > 0;
 
-    Array<f32> rendering_data;
+    Vec<f32> rendering_data;
 
     RenderMeFlags rdrme_creation_flags = 0x0;
 
@@ -320,7 +320,7 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
         auto vertices = wf_model_extract_vertices(model);
         auto texcoords = wf_model_extract_texcoords(model);
 
-        Array<f32> normals; 
+        Vec<f32> normals; 
         if (gen_normals == TRUE) {
             normals = mu_gen_normals(vertices);
         } else {
@@ -345,7 +345,7 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
     } else if (has_normals) {
         auto vertices = wf_model_extract_vertices(model);
 
-        Array<f32> normals; 
+        Vec<f32> normals; 
         if (gen_normals == TRUE) {
             normals = mu_gen_normals(vertices);
         } else {
@@ -369,7 +369,7 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
         auto vertices = wf_model_extract_vertices(model);
         auto texcoords = wf_model_extract_texcoords(model);
 
-        Array<f32> normals; 
+        Vec<f32> normals; 
         b8 has_normals = gen_normals == TRUE || interp_normals == TRUE;
         if (gen_normals == TRUE || interp_normals == TRUE) {
             normals = mu_gen_normals(vertices);
@@ -391,7 +391,7 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
     } else {
         auto vertices = wf_model_extract_vertices(model);
 
-        Array<f32> normals; 
+        Vec<f32> normals; 
         if (gen_normals == TRUE || interp_normals == TRUE) {
             normals = mu_gen_normals(vertices);
             auto indices = wf_model_extract_indices(model);

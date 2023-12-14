@@ -1,0 +1,2 @@
+file(GLOB_RECURSE SOURCES "*.cpp")
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${SOURCES})

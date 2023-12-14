@@ -6,7 +6,7 @@
 #include <cglm/vec3.h>
 #include <cglm/vec4.h>
 
-#include "array.h"
+#include "core/vec.h"
 
 struct PointLight {
     vec4 position;
@@ -33,8 +33,8 @@ struct DirectionalLight {
 };
 
 struct Scene {
-    Array<PointLight> point_lights;
-    Array<DirectionalLight> directional_lights;
+    Vec<PointLight> point_lights;
+    Vec<DirectionalLight> directional_lights;
 };
 
 PointLight pt_light_make(vec3 position, vec3 ambient, vec3 diffuse, vec3 specular);

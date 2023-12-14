@@ -58,7 +58,7 @@ void checkSDLError(int line) {
 #endif
 }
 
-#include "array.h"
+#include "core/vec.h"
 #include "wavefront.h"
 
 char *read_shader_file(const char *filepath) {
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
             mymodel.tex_coords.len,
             mymodel.faces.len);
 
-    Array<f32> debug_points = mymodel.vertices;
+    Vec<f32> debug_points = mymodel.vertices;
 
     // Light coloring and shader stuff
     Material material = mat_make(MAT_CHROME,
@@ -199,9 +199,8 @@ int main(int argc, char *argv[]) {
 
     f64 debug_last_toggle = 0.0;
 
-    Array<RenderMe *> render_list;
-    array_init(&render_list, 32);
-    array_push(&render_list, &rme);
+    Vec<RenderMe *> render_list(32);
+    render_list.push_back(&rme);
 
     while (running) {
         last_time = now_time;
