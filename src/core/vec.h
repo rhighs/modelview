@@ -24,6 +24,17 @@ struct Vec {
 
     Vec(u32 count = 4) { _c_data = Container<T>(count); }
     ~Vec() { _c_data.dealloc(); }
+    Vec(const Vec<T>& other) = default;
+    Vec<T>& operator=(const Vec<T>& other) = default;
+
+    Vec<T>& operator=(Vec<T>&& o) noexcept {
+        if (this != &o) {
+            _c_data.dealloc();
+            this->_c_data._raw_data = nullptr;
+            this->_c_data = o._c_data;
+        }
+        return *this;
+    }
 
     _FORCE_INLINE_ u32 len() const { return _c_data.len(); }
     void push_back(const T &value) { return _c_data.push_back(value); }
@@ -51,7 +62,7 @@ Vec<T> Vec<T>::from(T *data, u32 count) {
 
 template<typename T>
 T& Vec<T>::operator[](u32 index) {
-    ASSERT(index < _c_data.len(), "index cannot be out of array bounds");
+    DEV_ASSERT(index < _c_data.len(), "index cannot be out of array bounds");
     return (_c_data.get_value(index));
 }
 
@@ -76,11 +87,12 @@ template<typename T>
 Vec<T>::Vec(const T &value, u32 count) {
     _c_data = Container<T>(count);
     T *base = _c_data.raw();
-    DEV_ASSERT(base != null, "container base must be initialized to perform an init operation")
+    DEV_ASSERT(base != null, "container base must be initialized to perform an init operation");
 
     // set the length alrady to be used later,
     // this is only really used to perform container specific fills
-    *(_c_data._len()) = count; 
+    u32 *len_ptr = _c_data._len();
+    *len_ptr = count; 
 
     for (u32 k=0; k<_c_data.len(); k++)
         memcpy(base++, &value, sizeof(T));

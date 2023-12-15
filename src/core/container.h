@@ -21,7 +21,7 @@ struct Container {
 
     _FORCE_INLINE_ void dealloc();
     _FORCE_INLINE_ u32 len() const { return *_len(); }
-    _FORCE_INLINE_ T get_value(u32 at) const { return *reinterpret_cast<const T *>(_get_value(at)); }
+    _FORCE_INLINE_ T& get_value(u32 at) const { return *reinterpret_cast<T *>(_get_value(at)); }
 
     _FORCE_INLINE_ void push_back(const T &value);
     _FORCE_INLINE_ void append(const Container<T> &other);
@@ -75,7 +75,6 @@ template<typename T>
 T Container<T>::pop_back() {
     static T default_value;
     DEV_ASSERT(current_len > 0, "can't pop_back on an empty container!");
-    const u32 current_len = *_len();
     const T result = *_get_value();
     *(_len()) -= 1;
     return result;

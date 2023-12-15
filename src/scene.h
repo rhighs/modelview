@@ -1,7 +1,7 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
-#include "types.h"
+#include "core/types.h"
 
 #include <cglm/vec3.h>
 #include <cglm/vec4.h>

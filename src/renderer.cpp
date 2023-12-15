@@ -8,7 +8,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "scene.h"
-#include "types.h"
+#include "core/types.h"
 
 #include "io.h"
 
@@ -100,8 +100,8 @@ void __rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
         sp_set_uniform_mat4(program, "projection", projection);
     }
 
-    if (scene->point_lights.len > 0 && renderme->shader_type != SHADER_DEBUG_V) {
-        for (u32 i=0; i<scene->directional_lights.len; i++) {
+    if (scene->point_lights.len() > 0 && renderme->shader_type != SHADER_DEBUG_V) {
+        for (u32 i=0; i<scene->directional_lights.len(); i++) {
             auto pl = scene->point_lights[i];
 
 #ifdef RDR_DEBUG
@@ -120,8 +120,8 @@ void __rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
         }
     }
 
-    if (scene->directional_lights.len > 0) {
-        for (u32 i=0; i<scene->directional_lights.len; i++) {
+    if (scene->directional_lights.len() > 0) {
+        for (u32 i=0; i<scene->directional_lights.len(); i++) {
             auto dl = scene->directional_lights[0];
 #ifdef RDR_DEBUG
         IO_LOG(stdout, "using directional light n = %d (%f, %f, %f)", i,
@@ -138,7 +138,7 @@ void __rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
     sp_set_uniform_vec3f(program, "eye.position", renderer->camera->pos);
 
     glBindVertexArray(renderme->vao);
-    if (renderme->shader_indices.len == 0) {
+    if (renderme->shader_indices.len() == 0) {
         // Vertex count is to be intented as the "attribute" unit or whatever.
         // As a question: how many "vertex shader" calls will there be? vertex_count shader calls
  #ifdef RDR_DEBUG

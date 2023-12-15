@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <cglm/cglm.h>
 
-#include "types.h"
+#include "core/types.h"
 
 struct ShaderProgram {
     u32 program;

@@ -3,7 +3,7 @@
 
 #include <cglm/cglm.h>
 
-#include "types.h"
+#include "core/types.h"
 #include "camera.h"
 #include "shader.h"
 #include "scene.h"

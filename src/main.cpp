@@ -26,7 +26,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include "types.h"
+#include "core/types.h"
 #include "camera.h"
 
 #include "material.h"
@@ -165,10 +165,10 @@ int main(int argc, char *argv[]) {
 
     OBJModel mymodel = wf_load_obj_model("./res/models/lambo/lambo.obj");
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
-            mymodel.vertices.len,
-            mymodel.normals.len,
-            mymodel.tex_coords.len,
-            mymodel.faces.len);
+            mymodel.vertices.len(),
+            mymodel.normals.len(),
+            mymodel.tex_coords.len(),
+            mymodel.faces.len());
 
     Vec<f32> debug_points = mymodel.vertices;
 
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (io_is_key_pressed(SDL_SCANCODE_F4) && debug_last_toggle > .1) {
-            for (u32 rdr_i=0; rdr_i<render_list.len; rdr_i++)
+            for (u32 rdr_i=0; rdr_i<render_list.len(); rdr_i++)
                 render_list[rdr_i]->show_debug = !render_list[rdr_i]->show_debug;
             debug_last_toggle = 0.0;
         } else {
@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
                 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        for (u32 rdr_i=0; rdr_i<render_list.len; rdr_i++) {
+        for (u32 rdr_i=0; rdr_i<render_list.len(); rdr_i++) {
             RenderMe *renderme = render_list[rdr_i];
             rdr_draw(&renderer, &main_scene, renderme);
         }

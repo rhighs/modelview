@@ -3,7 +3,7 @@
 
 #include <cglm/cglm.h>
 #include "core/vec.h"
-#include "types.h"
+#include "core/types.h"
 
 Vec<f32> mu_gen_normals(Vec<f32> perface_vertices);
 

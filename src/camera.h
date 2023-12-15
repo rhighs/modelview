@@ -3,7 +3,7 @@
 
 #include <cglm/cglm.h>
 
-#include "types.h"
+#include "core/types.h"
 
 #define __CAMERA_DEFAULT_SPEED 10.0f
 #define __CAMERA_DEFAULT_SENS 0.1f

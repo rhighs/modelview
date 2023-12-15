@@ -1,7 +1,7 @@
 #include <cglm/cglm.h>
 
 #include "wavefront.h"
-#include "string.h"
+#include "core/string.h"
 
 #include "io.h"
 
@@ -22,75 +22,67 @@ u32 __compute_quad_max_end(u32 nfaces) {
 }
 
 u32 __parse_f32_values(Vec<f32> *dst, const char *from, const u32 limit) {
-    String line = string_strip_free(string_from(from));
-    auto values = string_split(line, ' ');
+    String line = String::from(from);
+    auto values = line.split(' ');
+    // strip here: string_strip_free(string_from(from)); 
 
     u32 added = 0;
-    for (u32 i=0; i<values.len && added < limit; i++) {
+    for (u32 i=0; i<values.len() && added < limit; i++) {
         auto token = values[i];
-        const f32 value = atof(string_c(&token));
-        array_push(dst, value);
+        const f32 value = atof(token.raw());
+        dst->push_back(value);
         added++;
     }
 
-    for (u32 i=0; i<values.len; i++) {
-        auto token = values[i];
-        string_free(&token);
-    }
-    array_free(&values);
+    // for (u32 i=0; i<values.len(); i++) {
+    //     auto token = values[i];
+    //     string_free(&token);
+    // }
 
-    return values.len;
+    return values.len();
 }
 
 void __parse_face_data(Vec<Vec<OBJFaceVertex>> *dst, const char *from) {
-    Vec<OBJFaceVertex> result;
-    array_init(&result, 4);
+    Vec<OBJFaceVertex> result(4);
 
-    String line = string_from(from);
-    Vec<String> defs = string_split(line, ' ');
+    String line = String::from(from);
+    Vec<String> defs = line.split(' ');
 
-    for (u32 i=0; i<defs.len; i++) {
+    for (u32 i=0; i<defs.len(); i++) {
         OBJFaceVertex face_vertex;
-        Vec<String> values = string_split(defs[i], '/');
+        Vec<String> values = defs[i].split('/');
 
-        if (values.len == 2) {
+        if (values.len() == 2) {
             String vertex_str = values[0];
-            face_vertex.vertex_id = atoi(string_c(&vertex_str));
+            face_vertex.vertex_id = atoi(vertex_str.raw());
             String tex_str = values[1];
-            face_vertex.tex_coord_id = atoi(string_c(&tex_str));
-        } else if (values.len == 3) {
+            face_vertex.tex_coord_id = atoi(tex_str.raw());
+        } else if (values.len() == 3) {
             String vertex_str = values[0];
-            face_vertex.vertex_id = atoi(string_c(&vertex_str));
+            face_vertex.vertex_id = atoi(vertex_str.raw());
             String tex_str = values[1];
-            face_vertex.tex_coord_id = atoi(string_c(&tex_str));
+            face_vertex.tex_coord_id = atoi(tex_str.raw());
             String normal_str = values[2];
-            face_vertex.normal_id = atoi(string_c(&normal_str));
+            face_vertex.normal_id = atoi(normal_str.raw());
         }
 
-        for (u32 i=0; i<values.len; i++) {
-            auto some_str = values[i];
-            string_free(&some_str);
-        }
-        array_free(&values);
-        array_push(&result, face_vertex);
+        // for (u32 i=0; i<values.len(); i++) {
+        //     auto some_str = values[i];
+        //     string_free(&some_str);
+        // }
+        result.push_back(face_vertex);
     }
 
-    for (u32 i=0; i<defs.len; i++) {
-        auto some_str = defs[i];
-        string_free(&some_str);
-    }
-    array_free(&defs);
-    array_push(dst, result);
+    dst->push_back(result);
 }
 
 Vec<f32> wf_model_zip_v_vn_tex(OBJModel *model) {
-    Vec<f32> result;
-    array_init(&result, model->faces.len * 3);
+    Vec<f32> result(model->faces.len() * 3);
 
-    for (u32 i=0; i<model->faces.len; i++) {
+    for (u32 i=0; i<model->faces.len(); i++) {
         Vec<OBJFaceVertex> faces = model->faces[i];
 
-        u32 quad_max = __compute_quad_max_end(faces.len);
+        u32 quad_max = __compute_quad_max_end(faces.len());
         for (u32 v_id=0; v_id<quad_max; v_id++) {
             const u32 v = FACE_QUAD_ORDER[v_id];
             const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
@@ -98,20 +90,20 @@ Vec<f32> wf_model_zip_v_vn_tex(OBJModel *model) {
             const u32 tex_coord_id =  (faces[v].tex_coord_id - 1) * 2;
 
             for (u32 component_id=0; component_id<3; component_id++) {
-                array_push(&result, model->vertices[vertex_id+component_id]);
+                result.push_back(model->vertices[vertex_id+component_id]);
             }
 
             for (u32 component_id=0; component_id<3; component_id++) {
-                if (model->normals.len == 0)
-                    array_push(&result, (f32)1.0f);
+                if (model->normals.len() == 0)
+                    result.push_back((f32)1.0f);
                 else
-                    array_push(&result, model->normals[normal_id+component_id]);
+                    result.push_back(model->normals[normal_id+component_id]);
             }
             for (u32 component_id=0; component_id<2; component_id++) {
-                if (model->tex_coords.len == 0)
-                    array_push(&result, (f32)0.0f);
+                if (model->tex_coords.len() == 0)
+                    result.push_back((f32)0.0f);
                 else
-                    array_push(&result, model->tex_coords[tex_coord_id+component_id]);
+                    result.push_back(model->tex_coords[tex_coord_id+component_id]);
             }
         }
     }
@@ -120,12 +112,11 @@ Vec<f32> wf_model_zip_v_vn_tex(OBJModel *model) {
 }
 
 Vec<f32> wf_model_zip_v_vn(OBJModel *model) {
-    Vec<f32> result;
-    array_init(&result, model->faces.len * 3);
+    Vec<f32> result(model->faces.len() * 3);
 
-    for (u32 i=0; i<model->faces.len; i++) {
+    for (u32 i=0; i<model->faces.len(); i++) {
         Vec<OBJFaceVertex> faces = model->faces[i];
-        u32 quad_max = __compute_quad_max_end(faces.len);
+        u32 quad_max = __compute_quad_max_end(faces.len());
 
         for (u32 v_id=0; v_id<quad_max; v_id++) {
             const u32 v = FACE_QUAD_ORDER[v_id];
@@ -133,9 +124,9 @@ Vec<f32> wf_model_zip_v_vn(OBJModel *model) {
             // const u32 normal_id = (faces[v].normal_id - 1) * 3;
 
             for (u32 component_id=0; component_id<3; component_id++)
-                array_push(&result, model->vertices[vertex_id+component_id]);
+                result.push_back(model->vertices[vertex_id+component_id]);
             for (u32 component_id=0; component_id<3; component_id++)
-                array_push(&result, 0.0f);
+                result.push_back(0.0f);
         }
     }
 
@@ -143,17 +134,16 @@ Vec<f32> wf_model_zip_v_vn(OBJModel *model) {
 }
 
 Vec<u32> wf_model_extract_indices(OBJModel *model) {
-    Vec<u32> result;
-    array_init(&result, model->vertices.len/3);
+    Vec<u32> result(model->vertices.len()/3);
 
-    for (u32 i=0; i<model->faces.len; i++) {
+    for (u32 i=0; i<model->faces.len(); i++) {
         Vec<OBJFaceVertex> faces = model->faces[i];
-        u32 quad_max = __compute_quad_max_end(faces.len);
+        u32 quad_max = __compute_quad_max_end(faces.len());
 
         for (u32 v_id=0; v_id<quad_max; v_id++) {
             const u32 v = FACE_QUAD_ORDER[v_id];
             const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
-            array_push(&result, vertex_id);
+            result.push_back(vertex_id);
         }
     }
 
@@ -161,21 +151,20 @@ Vec<u32> wf_model_extract_indices(OBJModel *model) {
 }
 
 Vec<f32> wf_model_extract_normals(OBJModel *model) {
-    Vec<f32> result;
-    array_init(&result, model->faces.len * 3);
+    Vec<f32> result(model->faces.len() * 3);
 
-    for (u32 i=0; i<model->faces.len; i++) {
+    for (u32 i=0; i<model->faces.len(); i++) {
         Vec<OBJFaceVertex> faces = model->faces[i];
 
-        u32 quad_max = __compute_quad_max_end(faces.len);
+        u32 quad_max = __compute_quad_max_end(faces.len());
         for (u32 v_id=0; v_id<quad_max; v_id++) {
             const u32 v = FACE_QUAD_ORDER[v_id];
             const u32 normal_id = (faces[v].normal_id - 1) * 3;
             for (u32 component_id=0; component_id<3; component_id++) {
-                if (model->normals.len == 0)
-                    array_push(&result, (f32)1.0f);
+                if (model->normals.len() == 0)
+                    result.push_back((f32)1.0f);
                 else
-                    array_push(&result, model->normals[normal_id+component_id]);
+                    result.push_back(model->normals[normal_id+component_id]);
             }
         }
     }
@@ -184,20 +173,19 @@ Vec<f32> wf_model_extract_normals(OBJModel *model) {
 }
 
 Vec<f32> wf_model_extract_texcoords(OBJModel *model) {
-    Vec<f32> result;
-    array_init(&result, model->faces.len * 3);
+    Vec<f32> result(model->faces.len() * 3);
 
-    for (u32 i=0; i<model->faces.len; i++) {
+    for (u32 i=0; i<model->faces.len(); i++) {
         Vec<OBJFaceVertex> faces = model->faces[i];
-        u32 quad_max = __compute_quad_max_end(faces.len);
+        u32 quad_max = __compute_quad_max_end(faces.len());
         for (u32 v_id=0; v_id<quad_max; v_id++) {
             const u32 v = FACE_QUAD_ORDER[v_id];
             const u32 tex_coord_id =  (faces[v].tex_coord_id - 1) * 2;
             for (u32 component_id=0; component_id<2; component_id++) {
-                if (model->tex_coords.len == 0)
-                    array_push(&result, (f32)0.0f);
+                if (model->tex_coords.len() == 0)
+                    result.push_back((f32)0.0f);
                 else
-                    array_push(&result, model->tex_coords[tex_coord_id+component_id]);
+                    result.push_back(model->tex_coords[tex_coord_id+component_id]);
             }
         }
     }
@@ -206,17 +194,16 @@ Vec<f32> wf_model_extract_texcoords(OBJModel *model) {
 }
 
 Vec<f32> wf_model_extract_vertices(OBJModel *model) {
-    Vec<f32> result;
-    array_init(&result, model->faces.len * 3);
+    Vec<f32> result(model->faces.len() * 3);
 
-    for (u32 i=0; i<model->faces.len; i++) {
+    for (u32 i=0; i<model->faces.len(); i++) {
         Vec<OBJFaceVertex> faces = model->faces[i];
-        u32 quad_max = __compute_quad_max_end(faces.len);
+        u32 quad_max = __compute_quad_max_end(faces.len());
         for (u32 v_id=0; v_id<quad_max; v_id++) {
             const u32 v = FACE_QUAD_ORDER[v_id];
             const u32 vertex_id = (faces[v].vertex_id - 1) * 3;
             for (u32 component_id=0; component_id<3; component_id++) {
-                array_push(&result, model->vertices[vertex_id+component_id]);
+                result.push_back(model->vertices[vertex_id+component_id]);
             }
         }
     }
@@ -226,11 +213,11 @@ Vec<f32> wf_model_extract_vertices(OBJModel *model) {
 
 OBJModel wf_load_obj_model(const char *path) {
     OBJModel result;
-    array_init(&result.vertices,    32);
-    array_init(&result.normals,     32);
-    array_init(&result.tex_coords,  32);
-    array_init(&result.indices,     32);
-    array_init(&result.faces,       32);
+    result.vertices = Vec<f32>(32);
+    result.normals = Vec<f32>(32);
+    result.tex_coords= Vec<f32>(32);
+    result.indices = Vec<u32>(32);
+    result.faces = Vec<Vec<OBJFaceVertex>>(32);
 
     char *content = NULL;
     u32 len = io_read_file(path, (u8 **)&content);
@@ -245,21 +232,24 @@ OBJModel wf_load_obj_model(const char *path) {
         u32 line_len = 0;
         for (; content[i+line_len]!='\n'; line_len++);
 
-        Vec<char> line;
-        array_init_with(&line, '\0', line_len+1);
+        Vec<char> line('\0', line_len+1);
         for (; content[i] != '\n'; i++)
-            array_push(&line, content[i]);
+            line.push_back(content[i]);
 
-        switch (line.data[0]) {
-        case 'v':
-            switch(line.data[1]) {
-            case ' ': __parse_f32_values(&result.vertices, line.data + 2, 3); break;
-            case 't': __parse_f32_values(&result.tex_coords, line.data + 3, 2); break;
-            case 'n': __parse_f32_values(&result.normals, line.data + 3, 3); break;
+        switch (line[0]) {
+        case 'v': {
+            char * raw_data_ptr = line._c_data.raw();
+            switch(line[1]) {
+            case ' ': __parse_f32_values(&result.vertices, raw_data_ptr + 2, 3); break;
+            case 't': __parse_f32_values(&result.tex_coords, raw_data_ptr + 3, 2); break;
+            case 'n': __parse_f32_values(&result.normals, raw_data_ptr + 3, 3); break;
             }
             break;
-        case 'f':
-            __parse_face_data(&result.faces, line.data + 2); break;
+        }
+        case 'f': {
+            char * raw_data_ptr = line._c_data.raw();
+            __parse_face_data(&result.faces, raw_data_ptr + 2); break;
+        }
         }
     }
 

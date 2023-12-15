@@ -35,15 +35,15 @@ DirectionalLight directional_light_make(vec3 direction, vec3 ambient, vec3 diffu
 
 Scene scene_init() {
     Scene result;
-    array_init(&result.directional_lights, 4);
-    array_init(&result.point_lights, 4);
+    result.directional_lights = Vec<DirectionalLight>(4);
+    result.point_lights = Vec<PointLight>(4);
     return result;
 }
 
 void scene_add_point_light(Scene *scene, PointLight point_light) {
-    array_push(&scene->point_lights, point_light);
+    scene->point_lights.push_back(point_light);
 }
 
 void scene_add_directional_light(Scene *scene, DirectionalLight directional_light) {
-    array_push(&scene->directional_lights, directional_light);
+    scene->directional_lights.push_back(directional_light);
 }

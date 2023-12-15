@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <SDL2/SDL_scancode.h>
 
-#include "types.h"
+#include "core/types.h"
 
 struct LoadedImage {
     u32 width;

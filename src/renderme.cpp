@@ -17,17 +17,16 @@
 
 static
 Vec<f32> zip_v_vn_tex(Vec<f32> vertices, Vec<f32> normals, Vec<f32> texcoords) {
-    assert(vertices.len == normals.len && texcoords.len/2 == vertices.len/3);
+    assert(vertices.len()== normals.len()&& texcoords.len()/2 == vertices.len()/3);
 
-    Vec<f32> result;
-    const u32 len = texcoords.len + normals.len + vertices.len;
-    array_init(&result, len);
+    const u32 len = texcoords.len()+ normals.len()+ vertices.len();
+    Vec<f32> result(len);
 
     u32 vi=0, vni=0, texi=0;
-    for (;result.len<len;) {
-        array_push(&result, vertices[vi++]); array_push(&result, vertices[vi++]); array_push(&result, vertices[vi++]);
-        array_push(&result, normals[vni++]); array_push(&result, normals[vni++]); array_push(&result, normals[vni++]);
-        array_push(&result, texcoords[texi++]); array_push(&result, texcoords[texi++]);
+    for (;result.len()<len;) {
+        result.push_back(vertices[vi++]);       result.push_back(vertices[vi++]); result.push_back(vertices[vi++]);
+        result.push_back(normals[vni++]);       result.push_back(normals[vni++]); result.push_back(normals[vni++]);
+        result.push_back(texcoords[texi++]);    result.push_back(texcoords[texi++]);
     }
 
     return result;
@@ -35,16 +34,15 @@ Vec<f32> zip_v_vn_tex(Vec<f32> vertices, Vec<f32> normals, Vec<f32> texcoords) {
 
 static
 Vec<f32> zip_v_vn(Vec<f32> vertices, Vec<f32> normals) {
-    assert(vertices.len == normals.len);
+    assert(vertices.len() == normals.len());
 
-    Vec<f32> result;
-    const u32 len = normals.len + vertices.len;
-    array_init(&result, len);
+    const u32 len = normals.len() + vertices.len();
+    Vec<f32> result(len);
 
     u32 vi=0, vni=0;
-    for (;result.len<len;) {
-        array_push(&result, vertices[vi++]); array_push(&result, vertices[vi++]); array_push(&result, vertices[vi++]);
-        array_push(&result, normals[vni++]); array_push(&result, normals[vni++]); array_push(&result, normals[vni++]);
+    for (;result.len()<len;) {
+        result.push_back(vertices[vi++]); result.push_back(vertices[vi++]); result.push_back(vertices[vi++]);
+        result.push_back(normals[vni++]); result.push_back(normals[vni++]); result.push_back(normals[vni++]);
     }
 
     return result;
@@ -52,16 +50,15 @@ Vec<f32> zip_v_vn(Vec<f32> vertices, Vec<f32> normals) {
 
 static
 Vec<f32> zip_v_tex(Vec<f32> vertices, Vec<f32> texcoords) {
-    assert(texcoords.len/2 == vertices.len/3);
+    assert(texcoords.len()/2 == vertices.len()/3);
 
-    Vec<f32> result;
-    const u32 len = texcoords.len + vertices.len;
-    array_init(&result, len);
+    const u32 len = texcoords.len()+ vertices.len();
+    Vec<f32> result(len);
 
     u32 vi=0, texi=0;
-    for (;result.len<len;) {
-        array_push(&result, vertices[vi++]); array_push(&result, vertices[vi++]); array_push(&result, vertices[vi++]);
-        array_push(&result, texcoords[texi++]); array_push(&result, texcoords[texi++]);
+    for (;result.len()<len;) {
+        result.push_back(vertices[vi++]); result.push_back(vertices[vi++]); result.push_back(vertices[vi++]);
+        result.push_back(texcoords[texi++]); result.push_back(texcoords[texi++]);
     }
 
     return result;
@@ -143,7 +140,7 @@ u32 __norm_tex_vao(Vec<f32> data) {
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * data.len, data.data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * data.len(), data._c_data.raw(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3*sizeof(f32)));
@@ -163,7 +160,7 @@ u32 __norm_vao(Vec<f32> data) {
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * data.len, data.data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * data.len(), data._c_data.raw(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3*sizeof(f32)));
@@ -181,7 +178,7 @@ u32 __debug_vao(Vec<f32> data) {
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * data.len, data.data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(f32) * data.len(), data._c_data.raw(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
@@ -190,19 +187,18 @@ u32 __debug_vao(Vec<f32> data) {
 
 #define DEBUG_SCALE 0.2f
 Vec<f32> __create_debug_vertices(Vec<f32> debug_positions, Vec<f32> debug_cube_verts) {
-    Vec<f32> result;
-    array_init(&result, 32);
+    Vec<f32> result(32);
 
-    for (u32 i=0; i<debug_positions.len-2; i+=3) {
-        for (u32 j=0; j<debug_cube_verts.len-2; j+=3) {
+    for (u32 i=0; i<debug_positions.len()-2; i+=3) {
+        for (u32 j=0; j<debug_cube_verts.len()-2; j+=3) {
             vec3 v = {debug_cube_verts[j+0],
                            debug_cube_verts[j+1],
                            debug_cube_verts[j+2]};
             glm_vec3_scale(v, DEBUG_SCALE, v);
             glm_vec3_add(v, (vec3){debug_positions[i+0], debug_positions[i+1], debug_positions[i+2]}, v);
-            array_push(&result, v[0]);
-            array_push(&result, v[1]);
-            array_push(&result, v[2]);
+            result.push_back(v[0]);
+            result.push_back(v[1]);
+            result.push_back(v[2]);
         }
     }
 
@@ -219,15 +215,15 @@ void rdrme_setup_debug(RenderMe *renderme, Vec<f32> debug_points) {
 
     Vec<f32> debug_verts = __create_debug_vertices(
         debug_points, 
-        array_from(
+        Vec<f32>::from(
             __debug_cube_vertices,
-            RAW_ARRAY_LEN(__debug_cube_vertices)
+            ARRAY_RAW_LEN(__debug_cube_vertices)
         )
     );
     renderme->debug_VAO = __debug_vao(debug_verts);
-    renderme->debug_shader_count = debug_verts.len/3;
+    renderme->debug_shader_count = debug_verts.len()/3;
 
-    array_free(&debug_verts);
+    
 }
 
 #define CHECKFLAG(A, B) ((A & B)!=0)
@@ -280,7 +276,7 @@ RenderMe rdrme_create(Vec<f32> data, RenderMeFlags flags, Material material) {
 
 #ifdef RDR_DEBUG
     IO_LOG(stdout, "mesh data in renderme =", NULL);
-    array_print(&data);
+    // array_print(&data);
 #endif
 
     glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, result.transform.rotation);
@@ -288,12 +284,12 @@ RenderMe rdrme_create(Vec<f32> data, RenderMeFlags flags, Material material) {
     glm_vec3_copy((vec3) { 1.0f, 1.0f, 1.0f }, result.transform.scale);
 
     // TODO: indices should be given from caller
-    array_init(&result.shader_indices, 4);
+    result.shader_indices = Vec<f32>(4);
 
     // FIXME: ownership is outside!
-    printf("render data info: %p (len: %d)\n", data.data, data.len);
+    printf("render data info: %p (len: %d)\n", data._c_data.raw(), data.len());
     result.shader_data = data;
-    result.shader_count = data.len / DATA_LINE_LENGTH;
+    result.shader_count = data.len()/ DATA_LINE_LENGTH;
 
     result.material = material;
     result.vao = VAO;
@@ -309,8 +305,8 @@ void rdrme_clone(RenderMe *cloneme, RenderMe *dest) {
 RenderMe rdrme_from_obj(OBJModel *model, Material material,
         b8 gen_normals, b8 interp_normals) {
     RenderMe result;
-    b8 has_texture = model->tex_coords.len > 0;
-    b8 has_normals = model->normals.len > 0;
+    b8 has_texture = model->tex_coords.len()> 0;
+    b8 has_normals = model->normals.len()> 0;
 
     Vec<f32> rendering_data;
 
@@ -330,14 +326,14 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
         if (interp_normals == TRUE) {
             auto indices = wf_model_extract_indices(model);
             mu_interpolate_normals(normals, indices);
-            array_free(&indices);
+            
         }
 
         rendering_data = zip_v_vn_tex(vertices, normals, texcoords);
 
-        array_free(&vertices);
-        array_free(&normals);
-        array_free(&texcoords);
+        
+        
+        
 
         rdrme_creation_flags = RDRME_LIGHT
             | RDRME_TEXTURE
@@ -355,13 +351,13 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
         if (interp_normals == TRUE) {
             auto indices = wf_model_extract_indices(model);
             mu_interpolate_normals(normals, indices);
-            array_free(&indices);
+            
         }
 
         rendering_data = zip_v_vn(vertices, normals);
 
-        array_free(&vertices);
-        array_free(&normals);
+        
+        
 
         rdrme_creation_flags = RDRME_LIGHT
             | RDRME_NORMAL;
@@ -377,13 +373,13 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
             mu_interpolate_normals(normals, indices);
             rendering_data = zip_v_vn_tex(vertices, normals, texcoords);
 
-            array_free(&indices);
+            
         } else {
             rendering_data = zip_v_tex(vertices, texcoords);
         }
 
-        array_free(&vertices);
-        array_free(&texcoords);
+        
+        
 
         rdrme_creation_flags = RDRME_LIGHT
             | RDRME_TEXTURE
@@ -398,13 +394,13 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
             mu_interpolate_normals(normals, indices);
             rendering_data = zip_v_vn(vertices, normals);
 
-            array_free(&indices);
+            
         } else {
-            rendering_data = array_from_copy(vertices.data, vertices.len);
+            rendering_data = Vec<f32>::from(vertices._c_data.raw(), vertices.len());
         }
 
-        array_free(&vertices);
-        array_free(&normals);
+        
+        
 
         rdrme_creation_flags = RDRME_LIGHT
             | (has_normals ? RDRME_NORMAL : 0x0);

@@ -3,7 +3,7 @@
 
 #include <cglm/cglm.h>
 
-#include "types.h"
+#include "core/types.h"
 #include "core/vec.h"
 #include "material.h"
 #include "wavefront.h"
