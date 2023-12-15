@@ -1,6 +1,7 @@
-[submodule "external/SDL"]
-	path = external/SDL
-	url = https://github.com/libsdl-org/SDL.git
 [submodule "external/cglm"]
 	path = external/cglm
 	url = https://github.com/recp/cglm
+[submodule "external/SDL"]
+	path = external/SDL
+	url = https://github.com/libsdl-org/SDL
+	branch = SDL2
