@@ -1,7 +1,6 @@
 #include "cglm/vec3.h"
 #include "io.h"
 #include "scene.h"
-#include <SDL2/SDL_mouse.h>
 #include <cctype>
 #include <cstring>
 #include <stdio.h>
@@ -9,16 +8,12 @@
 
 #include <math.h>
 
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_timer.h>
-#include <SDL2/SDL_video.h>
-
 /* If using gl3.h */
 /* Ensure we are using opengl's core profile only */
 #define GL3_PROTOTYPES 1
 #include <glad/glad.h>
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 #define PROGRAM_NAME "test"
 
 #include <cglm/cglm.h>
@@ -102,7 +97,7 @@ int main(int argc, char *argv[]) {
     u32 win_height = 720;
     u32 win_width = 1280;
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) 
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) 
         sdldie("Unable to initialize SDL");
 
     // Request opengl 3.2 context.
