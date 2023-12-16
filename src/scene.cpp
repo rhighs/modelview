@@ -4,17 +4,13 @@
 #include <cglm/cglm.h>
 
 PointLight point_light_make(vec3 position, vec3 ambient, vec3 diffuse, vec3 specular) {
-    PointLight l = {
-        .ambient = {},
-        .diffuse= {},
-        .specular = {},
-        .att_constant = 1.0f,
-        .att_linear = 0.08f,
-        .att_quadratic = 0.032f,
-        .intensity = 1.0f
-    };
+    PointLight l;
+    l.att_constant = 1.0f;
+    l.att_linear = 0.08f;
+    l.att_quadratic = 0.032f;
+    l.intensity = 1.0f;
 
-    glm_vec4_copy((vec4) { position[0], position[1], position[2], 1.0f }, l.position);
+    glm_vec4_copy(vec4 { position[0], position[1], position[2], 1.0f }, l.position);
     glm_vec3_copy(ambient, l.ambient);
     glm_vec3_copy(diffuse, l.diffuse);
     glm_vec3_copy(specular, l.specular);
@@ -23,10 +19,9 @@ PointLight point_light_make(vec3 position, vec3 ambient, vec3 diffuse, vec3 spec
 }
  
 DirectionalLight directional_light_make(vec3 direction, vec3 ambient, vec3 diffuse, vec3 specular) {
-    DirectionalLight l = {
-        .intensity = 1.0f
-    };
-    glm_vec4_copy((vec4) { direction[0], direction[1], direction[2], 1.0f }, l.direction);
+    DirectionalLight l;
+    l.intensity = 1.0f;
+    glm_vec4_copy(vec4 { direction[0], direction[1], direction[2], 1.0f }, l.direction);
     glm_vec3_copy(ambient, l.ambient);
     glm_vec3_copy(diffuse, l.diffuse);
     glm_vec3_copy(specular, l.specular);

@@ -23,7 +23,6 @@ ShaderProgram light_tex_program;
 ShaderProgram light_program;
 ShaderProgram debug_program;
     
-RenderMe __debug_box;
 Material __debug_material;
 // ========================================================
 
@@ -31,7 +30,7 @@ Renderer rdr_init(Camera *camera, u32 width, u32 height) {
     Renderer result;
 
     {
-        __debug_material = mat_make(MAT_WHITE_PLASTIC, (vec3) { 1.0f, 0.0f, 0.0f });
+        __debug_material = mat_make(MAT_WHITE_PLASTIC, vec3 { 1.0f, 0.0f, 0.0f });
     }
     
     if (!shaders_loaded) {
@@ -79,9 +78,9 @@ void __rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
     mat4 model = {};
     glm_mat4_identity(model);
     glm_translate(model, transform->translation);
-    glm_rotate(model, glm_rad(transform->rotation[0]), (vec3) { 1.0f, 0.0f, 0.0f });
-    glm_rotate(model, glm_rad(transform->rotation[1]), (vec3) { 0.0f, 1.0f, 0.0f });
-    glm_rotate(model, glm_rad(transform->rotation[2]), (vec3) { 0.0f, 0.0f, 1.0f });
+    glm_rotate(model, glm_rad(transform->rotation[0]), vec3 { 1.0f, 0.0f, 0.0f });
+    glm_rotate(model, glm_rad(transform->rotation[1]), vec3 { 0.0f, 1.0f, 0.0f });
+    glm_rotate(model, glm_rad(transform->rotation[2]), vec3 { 0.0f, 0.0f, 1.0f });
     glm_scale(model, transform->scale);
 
     // Set material uniforms
@@ -169,9 +168,9 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
         mat4 model = {};
         glm_mat4_identity(model);
         glm_translate(model, transform->translation);
-        glm_rotate(model, glm_rad(transform->rotation[0]), (vec3) { 1.0f, 0.0f, 0.0f });
-        glm_rotate(model, glm_rad(transform->rotation[1]), (vec3) { 0.0f, 1.0f, 0.0f });
-        glm_rotate(model, glm_rad(transform->rotation[2]), (vec3) { 0.0f, 0.0f, 1.0f });
+        glm_rotate(model, glm_rad(transform->rotation[0]), vec3 { 1.0f, 0.0f, 0.0f });
+        glm_rotate(model, glm_rad(transform->rotation[1]), vec3 { 0.0f, 1.0f, 0.0f });
+        glm_rotate(model, glm_rad(transform->rotation[2]), vec3 { 0.0f, 0.0f, 1.0f });
         glm_scale(model, transform->scale);
 
         // Set debug color uniform

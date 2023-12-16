@@ -90,5 +90,5 @@ ShaderProgram sp_create(
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
 
-    return (ShaderProgram) { .program = shader_program };
+    return ShaderProgram { shader_program };
 }

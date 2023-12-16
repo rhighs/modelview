@@ -7,9 +7,9 @@
 
 void camera_init(Camera *camera, vec3 pos) {
     glm_vec3_copy(pos, camera->pos);
-    glm_vec3_copy((vec3){ 0.0f, 1.0f, 0.0f }, camera->up);
-    glm_vec3_copy((vec3){ 0.0f, 0.0f, 0.0f }, camera->target);
-    glm_vec3_copy((vec3){ 0.0f, 0.0f, -1.0f }, camera->front);
+    glm_vec3_copy(vec3 { 0.0f, 1.0f, 0.0f }, camera->up);
+    glm_vec3_copy(vec3 { 0.0f, 0.0f, 0.0f }, camera->target);
+    glm_vec3_copy(vec3 { 0.0f, 0.0f, -1.0f }, camera->front);
     camera->sens = __CAMERA_DEFAULT_SENS;
     camera->speed = __CAMERA_DEFAULT_SPEED;
     camera->yaw = 0.0f;

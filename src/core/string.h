@@ -13,7 +13,7 @@
 struct String {
     Container<_STRING_CHAR_TYPE> _c_data;
 
-    String() { _c_data = Container<_STRING_CHAR_TYPE>(); }
+    String() { _c_data = Container<_STRING_CHAR_TYPE>(4); }
     ~String() { _c_data.dealloc(); }
 
     _FORCE_INLINE_ _NO_DISCARD_

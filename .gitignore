@@ -11,3 +11,6 @@ build
 *.so
 *.o
 *.a
+
+# Visual Studio
+.vs

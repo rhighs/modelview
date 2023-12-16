@@ -19,21 +19,14 @@ struct Vec {
     Container<T> _c_data;
 
     T& operator[](u32 index);
+    T operator[](u32 index) const;
 
-    Vec(const T &value, u32 count);
-
-    Vec(u32 count = 4) { _c_data = Container<T>(count); }
-    ~Vec() { _c_data.dealloc(); }
-    Vec(const Vec<T>& other) = default;
-    Vec<T>& operator=(const Vec<T>& other) = default;
-
-    Vec<T>& operator=(Vec<T>&& o) noexcept {
-        if (this != &o) {
-            _c_data.dealloc();
-            this->_c_data._raw_data = nullptr;
-            this->_c_data = o._c_data;
-        }
-        return *this;
+    _FORCE_INLINE_ Vec() {}
+    _FORCE_INLINE_ Vec(const T &value, u32 count);
+    _FORCE_INLINE_ Vec(u32 count) : _c_data(count) {}
+    _FORCE_INLINE_ ~Vec() {}
+    inline void operator=(const Vec &from) {
+        _c_data._raw_data = from._c_data._raw_data;
     }
 
     _FORCE_INLINE_ u32 len() const { return _c_data.len(); }
@@ -63,6 +56,13 @@ Vec<T> Vec<T>::from(T *data, u32 count) {
 template<typename T>
 T& Vec<T>::operator[](u32 index) {
     DEV_ASSERT(index < _c_data.len(), "index cannot be out of array bounds");
+    return (_c_data.get_value(index));
+}
+
+template<typename T>
+T Vec<T>::operator[](u32 index) const {
+    const u32 current_len = _c_data.len();
+    DEV_ASSERT(index < current_len, "index cannot be out of array bounds");
     return (_c_data.get_value(index));
 }
 

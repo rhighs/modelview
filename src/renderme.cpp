@@ -195,7 +195,7 @@ Vec<f32> __create_debug_vertices(Vec<f32> debug_positions, Vec<f32> debug_cube_v
                            debug_cube_verts[j+1],
                            debug_cube_verts[j+2]};
             glm_vec3_scale(v, DEBUG_SCALE, v);
-            glm_vec3_add(v, (vec3){debug_positions[i+0], debug_positions[i+1], debug_positions[i+2]}, v);
+            glm_vec3_add(v, vec3 {debug_positions[i+0], debug_positions[i+1], debug_positions[i+2]}, v);
             result.push_back(v[0]);
             result.push_back(v[1]);
             result.push_back(v[2]);
@@ -279,9 +279,9 @@ RenderMe rdrme_create(Vec<f32> data, RenderMeFlags flags, Material material) {
     // array_print(&data);
 #endif
 
-    glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, result.transform.rotation);
-    glm_vec3_copy((vec3) { 0.0f, 0.0f, 0.0f }, result.transform.translation);
-    glm_vec3_copy((vec3) { 1.0f, 1.0f, 1.0f }, result.transform.scale);
+    glm_vec3_copy(vec3 { 0.0f, 0.0f, 0.0f }, result.transform.rotation);
+    glm_vec3_copy(vec3 { 0.0f, 0.0f, 0.0f }, result.transform.translation);
+    glm_vec3_copy(vec3 { 1.0f, 1.0f, 1.0f }, result.transform.scale);
 
     // TODO: indices should be given from caller
     result.shader_indices = Vec<f32>(4);

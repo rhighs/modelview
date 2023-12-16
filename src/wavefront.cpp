@@ -196,8 +196,9 @@ Vec<f32> wf_model_extract_texcoords(OBJModel *model) {
 Vec<f32> wf_model_extract_vertices(OBJModel *model) {
     Vec<f32> result(model->faces.len() * 3);
 
-    for (u32 i=0; i<model->faces.len(); i++) {
-        Vec<OBJFaceVertex> faces = model->faces[i];
+    const u32 faces_len = model->faces.len();
+    for (u32 i=0; i<faces_len; i++) {
+        Vec<OBJFaceVertex>& faces = model->faces[i];
         u32 quad_max = __compute_quad_max_end(faces.len());
         for (u32 v_id=0; v_id<quad_max; v_id++) {
             const u32 v = FACE_QUAD_ORDER[v_id];
@@ -233,13 +234,18 @@ OBJModel wf_load_obj_model(const char *path) {
         for (; content[i+line_len]!='\n'; line_len++);
 
         Vec<char> line('\0', line_len+1);
-        for (; content[i] != '\n'; i++)
+        for (; content[i] != '\n'; i++) {
+            const char token = content[i];
+            IO_LOG(stdout, "push_back on char (%d)", token);
             line.push_back(content[i]);
+        }
 
-        switch (line[0]) {
+        const char first_token = line[0];
+        switch (first_token) {
         case 'v': {
             char * raw_data_ptr = line._c_data.raw();
-            switch(line[1]) {
+            const char second_token = line[1];
+            switch(second_token) {
             case ' ': __parse_f32_values(&result.vertices, raw_data_ptr + 2, 3); break;
             case 't': __parse_f32_values(&result.tex_coords, raw_data_ptr + 3, 2); break;
             case 'n': __parse_f32_values(&result.normals, raw_data_ptr + 3, 3); break;

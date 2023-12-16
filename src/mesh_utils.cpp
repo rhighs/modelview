@@ -14,9 +14,10 @@ void __mu_gen_face_normal(vec3 v1, vec3 v2, vec3 v3, vec3 result) {
     glm_vec3_norm(result);
 }
 
-Vec<f32> mu_gen_normals(Vec<f32> vertices) {
+Vec<f32> mu_gen_normals(const Vec<f32>& vertices) {
     Vec<f32> result(vertices.len());
 
+    const u32 vertices_len = vertices.len();
     for (u32 i=0; i<vertices.len()-8; i+=9) {
         vec3 v1 = { vertices[i+0], vertices[i+1], vertices[i+2] };
         vec3 v2 = { vertices[i+3], vertices[i+4], vertices[i+5] };
@@ -32,7 +33,7 @@ Vec<f32> mu_gen_normals(Vec<f32> vertices) {
     return result;
 }
 
-void mu_interpolate_normals(Vec<f32> normals, Vec<u32> indices) {
+void mu_interpolate_normals(Vec<f32>& normals, Vec<u32>& indices) {
     u32 max_i = 0;
     for (u32 i=0; i<indices.len(); i++)
         if (max_i<indices[i]) max_i=indices[i];

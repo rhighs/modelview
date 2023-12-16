@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
     // This makes our buffer swap syncronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
 
-    auto texture_data = io_read_image_file("./res/models/lambo/lambo.png");
+    LoadedImage texture_data = io_read_image_file("C:\\Users\\rober\\repos\\modelview\\res\\models\\lambo\\lambo.png");
     bind_texture_info(texture_data);
     stbi_image_free(texture_data.data);
     
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 
     Camera camera;
 
-    OBJModel mymodel = wf_load_obj_model("./res/models/lambo/lambo.obj");
+    OBJModel mymodel = wf_load_obj_model("C:\\Users\\rober\\repos\\modelview\\res\\models\\lambo\\lambo.obj");
     printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
             mymodel.vertices.len(),
             mymodel.normals.len(),
@@ -169,12 +169,12 @@ int main(int argc, char *argv[]) {
 
     // Light coloring and shader stuff
     Material material = mat_make(MAT_CHROME,
-            (vec3) { 1.0f, .7f, 0.0f });
+            vec3 { 1.0f, .7f, 0.0f });
 
     RenderMe rme = rdrme_from_obj(&mymodel, material, TRUE, TRUE);
     rdrme_setup_debug(&rme, debug_points);
 
-    glm_vec3_copy((vec3) { .05f, .05f, .05f }, rme.transform.scale);
+    glm_vec3_copy(vec3 { .05f, .05f, .05f }, rme.transform.scale);
 
     Renderer renderer = rdr_init(&camera, win_width, win_height);
     camera_init(renderer.camera, camera_pos);
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     vec3 light_color = { 1.0f, 1.0f, 1.0f };
 
     PointLight main_light = point_light_make(light_position, light_color, light_color, light_color);
-    DirectionalLight dir_light = directional_light_make((vec3) { -0.5, -0.5, -0.5 }, light_color, light_color, light_color);
+    DirectionalLight dir_light = directional_light_make(vec3 { -0.5, -0.5, -0.5 }, light_color, light_color, light_color);
 
     Scene main_scene = scene_init();
     scene_add_point_light(&main_scene, main_light);

@@ -21,6 +21,7 @@ String String::from(const _STRING_CHAR_TYPE *c_string) {
     return result;
 }
 
+_NO_DISCARD_
 Vec<String> String::split(_STRING_CHAR_TYPE token) const {
     Vec<String> result;
     String current;
