@@ -5,6 +5,12 @@
 #include <memory.h>
 #include <assert.h>
 
+_NO_DISCARD_
+bool String::starts_with(const String &other) const {
+    String substr = this->substr(0, other.len());
+    return substr == other;
+}
+
 String String::from(const _STRING_CHAR_TYPE *c_string) {
     u32 c_len = _STRING_GET_LEN_FUNC(c_string);
     String result = String::with_capacity(c_len);
@@ -38,7 +44,7 @@ Vec<String> String::lines() const {
 #endif
 }
 
-_NO_DISCARD_ _FORCE_INLINE_
+_NO_DISCARD_
 bool String::operator==(const String& other) const {
     _STRING_CHAR_TYPE *s1 = this->raw();
     _STRING_CHAR_TYPE *s2 = other.raw();
@@ -106,6 +112,6 @@ _STRING_CHAR_TYPE* String::raw() const {
     }
     */
    _STRING_CHAR_TYPE *end = _c_data.raw() + *(_c_data._len());
-   *(end + 1) = _STRING_CHAR_TYPE_TERM;
+   *(end) = _STRING_CHAR_TYPE_TERM;
    return _c_data.raw();
 }

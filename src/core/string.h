@@ -28,9 +28,9 @@ struct String {
     };
 
     _FORCE_INLINE_ _NO_DISCARD_ bool operator==(const String &other) const;
-    void operator+=(const String &other) { _c_data.append(other._c_data); }
-    void operator+=(_STRING_CHAR_TYPE value) { _c_data.push_back(value); }
-    _STRING_CHAR_TYPE operator[](u32 at) const { return _c_data.get_value(at); };
+    _FORCE_INLINE_ void operator+=(const String &other) { _c_data.append(other._c_data); }
+    _FORCE_INLINE_ void operator+=(_STRING_CHAR_TYPE value) { _c_data.push_back(value); }
+    _FORCE_INLINE_ _STRING_CHAR_TYPE operator[](u32 at) const { return _c_data.get_value(at); };
 
     _FORCE_INLINE_ void push_back(_STRING_CHAR_TYPE value) { _c_data.push_back(value); };
 
@@ -41,6 +41,7 @@ struct String {
     _NO_DISCARD_ static String from(const _STRING_CHAR_TYPE *c_string);
     _NO_DISCARD_ static String from(const _STRING_CHAR_TYPE* c_string, u32 len);
 
+    _NO_DISCARD_ bool starts_with(const String& other) const;
     _FORCE_INLINE_ u32 len() const { return _c_data.len(); }
     _FORCE_INLINE_ void append(const String &other) { _c_data.append(other._c_data); };
     _NO_DISCARD_ String strip(const _STRING_CHAR_TYPE strip_ch = ' ') const;

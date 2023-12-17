@@ -16,6 +16,8 @@
 #include <stdio.h>
 #endif
 
+#include "load.h"
+
 // private globals
 // ========================================================
 b8 shaders_loaded = FALSE;
@@ -33,9 +35,18 @@ Renderer rdr_init(Camera *camera, u32 width, u32 height) {
     }
     
     if (!shaders_loaded) {
-        light_tex_program = sp_create("C:\\Users\\rober\\repos\\modelview\\shaders\\vert_norm_tex_v.glsl", "C:\\Users\\rober\\repos\\modelview\\shaders\\texture_norm_light_f.glsl");
-        light_program = sp_create("C:\\Users\\rober\\repos\\modelview\\shaders\\vert_norm_tex_v.glsl", "C:\\Users\\rober\\repos\\modelview\\shaders\\material_norm_light_f.glsl");
-        debug_program = sp_create("C:\\Users\\rober\\repos\\modelview\\shaders\\vert_debug_v.glsl", "C:\\Users\\rober\\repos\\modelview\\shaders\\debug_f.glsl");
+        String light_tex_program_v_path = Loader::resolve_filepath("./shaders/vert_norm_tex_v.glsl");
+        String light_tex_program_f_path = Loader::resolve_filepath("./shaders/texture_norm_light_f.glsl");
+        light_tex_program = sp_create(light_tex_program_v_path.raw(), light_tex_program_f_path.raw());
+        
+        String light_program_v_path = Loader::resolve_filepath("./shaders/vert_norm_tex_v.glsl");
+        String light_program_f_path = Loader::resolve_filepath("./shaders/material_norm_light_f.glsl");
+        light_program = sp_create(light_program_v_path.raw(), light_program_f_path.raw());
+        
+        String debug_program_v_path = Loader::resolve_filepath("./shaders/vert_debug_v.glsl");
+        String debug_program_f_path = Loader::resolve_filepath("./shaders/debug_f.glsl");
+        debug_program = sp_create(debug_program_v_path.raw(), debug_program_f_path.raw());
+
         shaders_loaded = TRUE;
     }
 
