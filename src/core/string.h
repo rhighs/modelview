@@ -51,7 +51,7 @@ struct String {
     _STRING_CHAR_TYPE* end() const { return _c_data.raw() + _c_data.len(); }
 
     _NO_DISCARD_ static
-        String String::with_capacity(u32 count) {
+    String with_capacity(u32 count) {
         String result(count);
         result._c_data.clear();
         return result;

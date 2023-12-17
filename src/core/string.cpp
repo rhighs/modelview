@@ -34,7 +34,7 @@ Vec<String> String::lines() const {
 #ifdef _WIN32
     return this->split_str(String::from("\r\n"));
 #else
-    return this->split(String::from('\n'));
+    return this->split('\n');
 #endif
 }
 
