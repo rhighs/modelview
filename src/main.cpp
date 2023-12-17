@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
     Camera camera;
 
     OBJModel mymodel = wf_load_obj_model("C:\\Users\\rober\\repos\\modelview\\res\\models\\lambo\\lambo.obj");
-    printf("[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d\n",
+    IO_LOG(stdout, "[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d",
             mymodel.vertices.len(),
             mymodel.normals.len(),
             mymodel.tex_coords.len(),

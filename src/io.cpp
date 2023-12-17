@@ -2,6 +2,7 @@
 #include <assert.h>
 
 #include <stb_image.h>
+#include <sys/stat.h>
 
 #include "io.h"
 
@@ -21,23 +22,34 @@ void io_change_state(SDL_Scancode code, const b8 pressed) {
     __PRESSED_KEYS[code] = pressed;
 }
 
+static
+i32 __read_file_size(const char *filepath) {
+    struct stat stat_buf;
+    int rc = stat(filepath, &stat_buf);
+    return rc == 0 ? stat_buf.st_size : -1;
+}
+
 u32 io_read_file(const char* filepath, u8 **buf_ptr) {
 #ifdef MDEBUG
     fprintf(stdout, "[%s:%d] reading file: %s\n",
             __FUNCTION__, __LINE__, filepath);
 #endif
-    FILE *file = fopen(filepath, "r");
-    fseek(file, 0, SEEK_END);
-    u32 filesize = ftell(file);
-    rewind(file);
+    FILE *file = fopen(filepath, "rb");
 
-    *buf_ptr = (u8 *)malloc(filesize+1);
-    if (!fread(*buf_ptr, sizeof(char), filesize, file)) {
+    i32 filesize = __read_file_size(filepath);
+    if (filesize == -1) {
         fprintf(stderr, "Could not read file: %s\n", filepath);
         *buf_ptr = NULL;
         return 0;
     }
 
+    u8* buffer = (u8*)malloc(filesize + 1);
+    while (!feof(file)) {
+        fread(buffer, 1, filesize, file);
+    }
+    fclose(file);
+    buffer[filesize] = '\0';
+    *buf_ptr = buffer;
     return filesize;
 }
 

@@ -15,10 +15,11 @@ void __mu_gen_face_normal(vec3 v1, vec3 v2, vec3 v3, vec3 result) {
 }
 
 Vec<f32> mu_gen_normals(const Vec<f32>& vertices) {
+    const u32 vertices_len = vertices.len();
+    DEV_ASSERT(vertices_len > 8, "vertices len must be > 0, cannot generate normals for 0 verts...");
     Vec<f32> result(vertices.len());
 
-    const u32 vertices_len = vertices.len();
-    for (u32 i=0; i<vertices.len()-8; i+=9) {
+    for (u32 i=0; i<vertices_len-8; i+=9) {
         vec3 v1 = { vertices[i+0], vertices[i+1], vertices[i+2] };
         vec3 v2 = { vertices[i+3], vertices[i+4], vertices[i+5] };
         vec3 v3 = { vertices[i+6], vertices[i+7], vertices[i+8] };

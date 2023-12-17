@@ -2,22 +2,17 @@
 #include <cglm/cglm.h>
 
 #include "shader.h"
+#include "io.h"
 
 static
 char *read_shader_file(const char *filepath) {
-    FILE *file = fopen(filepath, "r");
-    fseek(file, 0, SEEK_END);
-    u32 filesize = ftell(file);
-    rewind(file);
-
-    char *shader_content = (char *)malloc(filesize+1);
-    if (!fread(shader_content, sizeof(char), filesize, file)) {
+    u8 *buffer;
+    u32 filesize = io_read_file(filepath, &buffer);
+    if (filesize == 0) {
         fprintf(stderr, "Could not read shader file: %s\n", filepath);
         exit(-1);
     }
-    shader_content[filesize] = '\0';
-
-    return shader_content;
+    return (char *)buffer;
 }
 
 void sp_use(ShaderProgram *program) {

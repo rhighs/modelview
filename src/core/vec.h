@@ -29,6 +29,14 @@ struct Vec {
         _c_data._raw_data = from._c_data._raw_data;
     }
 
+    // returns a new Vec<T> with length set 0, and capacity set to sizeof(T) * count.
+    // the allocated memory is initialised to init_v
+    _NO_DISCARD_ static Vec<T> with_capacity(const T &init_v, u32 count);
+
+    // returns a new Vec<T> with length set 0, and capacity set to sizeof(T) * count.
+    // the allocated memory is initialised to 0
+    _NO_DISCARD_ static Vec<T> with_capacity(u32 count);
+
     _FORCE_INLINE_ u32 len() const { return _c_data.len(); }
     void push_back(const T &value) { return _c_data.push_back(value); }
     _FORCE_INLINE_ void append(const Vec<T> &other) { _c_data.append(other._c_data); }
@@ -41,7 +49,23 @@ struct Vec {
 
     T* begin() const { return _c_data.raw(); }
     T* end() const { return _c_data.raw() + _c_data.len(); }
+
+    _FORCE_INLINE_ void dealloc() { _c_data.dealloc(); }
 };
+
+template<typename T>
+Vec<T> Vec<T>::with_capacity(u32 count) {
+    Vec<T> result(count);
+    result._c_data.clear();
+    return result;
+}
+
+template<typename T>
+Vec<T> Vec<T>::with_capacity(const T &init_v, u32 count) {
+    Vec<T> result(count);
+    result._c_data.reset(init_v);
+    return result;
+}
 
 template<typename T>
 Vec<T> Vec<T>::from(T *data, u32 count) {

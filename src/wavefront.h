@@ -5,9 +5,9 @@
 #include "core/vec.h"
 
 struct OBJFaceVertex {
-    u32 vertex_id;
-    u32 tex_coord_id;
-    u32 normal_id;
+    u32 vertex_id = 0;
+    u32 tex_coord_id = 0;
+    u32 normal_id = 0;
 };
 
 struct OBJModel {

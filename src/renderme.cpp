@@ -313,8 +313,8 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
     RenderMeFlags rdrme_creation_flags = 0x0;
 
     if (has_texture && has_normals) {
-        auto vertices = wf_model_extract_vertices(model);
-        auto texcoords = wf_model_extract_texcoords(model);
+        Vec<f32> vertices = wf_model_extract_vertices(model);
+        Vec<f32> texcoords = wf_model_extract_texcoords(model);
 
         Vec<f32> normals; 
         if (gen_normals == TRUE) {
@@ -324,7 +324,7 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
         }
 
         if (interp_normals == TRUE) {
-            auto indices = wf_model_extract_indices(model);
+            Vec<u32> indices = wf_model_extract_indices(model);
             mu_interpolate_normals(normals, indices);
             
         }
@@ -339,7 +339,7 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
             | RDRME_TEXTURE
             | RDRME_NORMAL;
     } else if (has_normals) {
-        auto vertices = wf_model_extract_vertices(model);
+        Vec<f32> vertices = wf_model_extract_vertices(model);
 
         Vec<f32> normals; 
         if (gen_normals == TRUE) {
@@ -349,7 +349,7 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
         }
 
         if (interp_normals == TRUE) {
-            auto indices = wf_model_extract_indices(model);
+            Vec<u32> indices = wf_model_extract_indices(model);
             mu_interpolate_normals(normals, indices);
             
         }
@@ -362,14 +362,14 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
         rdrme_creation_flags = RDRME_LIGHT
             | RDRME_NORMAL;
     } else if (has_texture) {
-        auto vertices = wf_model_extract_vertices(model);
-        auto texcoords = wf_model_extract_texcoords(model);
+        Vec<f32> vertices = wf_model_extract_vertices(model);
+        Vec<f32> texcoords = wf_model_extract_texcoords(model);
 
         Vec<f32> normals; 
         b8 has_normals = gen_normals == TRUE || interp_normals == TRUE;
         if (gen_normals == TRUE || interp_normals == TRUE) {
             normals = mu_gen_normals(vertices);
-            auto indices = wf_model_extract_indices(model);
+            Vec<u32> indices = wf_model_extract_indices(model);
             mu_interpolate_normals(normals, indices);
             rendering_data = zip_v_vn_tex(vertices, normals, texcoords);
 
@@ -385,12 +385,12 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
             | RDRME_TEXTURE
             | (has_normals ? RDRME_NORMAL : 0x0);
     } else {
-        auto vertices = wf_model_extract_vertices(model);
+        Vec<f32> vertices = wf_model_extract_vertices(model);
 
         Vec<f32> normals; 
         if (gen_normals == TRUE || interp_normals == TRUE) {
             normals = mu_gen_normals(vertices);
-            auto indices = wf_model_extract_indices(model);
+            Vec<u32> indices = wf_model_extract_indices(model);
             mu_interpolate_normals(normals, indices);
             rendering_data = zip_v_vn(vertices, normals);
 

@@ -28,15 +28,14 @@ Material __debug_material;
 
 Renderer rdr_init(Camera *camera, u32 width, u32 height) {
     Renderer result;
-
     {
         __debug_material = mat_make(MAT_WHITE_PLASTIC, vec3 { 1.0f, 0.0f, 0.0f });
     }
     
     if (!shaders_loaded) {
-        light_tex_program = sp_create("./shaders/vert_norm_tex_v.glsl", "./shaders/texture_norm_light_f.glsl");
-        light_program = sp_create("./shaders/vert_norm_tex_v.glsl", "./shaders/material_norm_light_f.glsl");
-        debug_program = sp_create("./shaders/vert_debug_v.glsl", "./shaders/debug_f.glsl");
+        light_tex_program = sp_create("C:\\Users\\rober\\repos\\modelview\\shaders\\vert_norm_tex_v.glsl", "C:\\Users\\rober\\repos\\modelview\\shaders\\texture_norm_light_f.glsl");
+        light_program = sp_create("C:\\Users\\rober\\repos\\modelview\\shaders\\vert_norm_tex_v.glsl", "C:\\Users\\rober\\repos\\modelview\\shaders\\material_norm_light_f.glsl");
+        debug_program = sp_create("C:\\Users\\rober\\repos\\modelview\\shaders\\vert_debug_v.glsl", "C:\\Users\\rober\\repos\\modelview\\shaders\\debug_f.glsl");
         shaders_loaded = TRUE;
     }
 
