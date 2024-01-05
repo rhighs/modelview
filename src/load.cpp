@@ -39,7 +39,7 @@ String Loader::resolve_filepath(const char *filepath) {
     }
 #else
     if (is_win_abs(filepath_str)) {
-        IO_LOG("cannot use win32 absolute path notation on a unix system...");
+        IO_LOG(stderr, "cannot use win32 absolute path notation on a unix system...", NULL);
         exit(-1);
     }
 #endif

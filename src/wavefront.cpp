@@ -1,4 +1,4 @@
-#include <cglm/cglm.h>
+#include <glm/glm.hpp>
 
 #include "wavefront.h"
 #include "core/string.h"

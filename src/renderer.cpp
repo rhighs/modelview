@@ -1,4 +1,6 @@
-#include <cglm/cglm.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_transform.inl>
 #include <glad/glad.h>
 
 #include "core/vec.h"
@@ -31,7 +33,7 @@ Material __debug_material;
 Renderer rdr_init(Camera *camera, u32 width, u32 height) {
     Renderer result;
     {
-        __debug_material = mat_make(MAT_WHITE_PLASTIC, vec3 { 1.0f, 0.0f, 0.0f });
+        __debug_material = mat_make(MAT_WHITE_PLASTIC, glm::vec3(1.0f, 0.0f, 0.0f));
     }
     
     if (!shaders_loaded) {
@@ -72,26 +74,23 @@ void __rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
     }
     sp_use(program);
 
-    mat4 view = {};
-    vec3 camera_target = {};
-    glm_vec3_add(renderer->camera->pos, renderer->camera->front, camera_target);
-    glm_lookat(renderer->camera->pos, camera_target, renderer->camera->up, view); 
+    Camera *camera = renderer->camera;
 
-    mat4 projection = {};
-    glm_perspective(glm_rad(renderer->camera->view_angle_deg),
+    glm::vec3 camera_target = camera->pos + camera->front;
+    glm::mat4 view = glm::lookAt(camera->pos, camera_target, camera->up);
+
+    glm::mat4 projection = glm::perspective(glm::radians(camera->view_angle_deg),
             (f32)renderer->vp_width/(f32)renderer->vp_height,
             renderer->camera->z_near,
-            renderer->camera->z_far,
-            projection);
+            renderer->camera->z_far);
 
     Transform *transform = &renderme->transform;
-    mat4 model = {};
-    glm_mat4_identity(model);
-    glm_translate(model, transform->translation);
-    glm_rotate(model, glm_rad(transform->rotation[0]), vec3 { 1.0f, 0.0f, 0.0f });
-    glm_rotate(model, glm_rad(transform->rotation[1]), vec3 { 0.0f, 1.0f, 0.0f });
-    glm_rotate(model, glm_rad(transform->rotation[2]), vec3 { 0.0f, 0.0f, 1.0f });
-    glm_scale(model, transform->scale);
+    glm::mat4 model(1.0f);
+    model = glm::translate(model, transform->translation);
+    model = glm::rotate(model, glm::radians(transform->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(transform->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(transform->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    model = glm::scale(model, transform->scale);
 
     // Set material uniforms
     {
@@ -162,26 +161,22 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
         ShaderProgram *program = &debug_program;
         sp_use(program);
 
-        mat4 view = {};
-        vec3 camera_target = {};
-        glm_vec3_add(renderer->camera->pos, renderer->camera->front, camera_target);
-        glm_lookat(renderer->camera->pos, camera_target, renderer->camera->up, view); 
+        Camera *camera = renderer->camera;
+        glm::vec3 camera_target = camera->pos + camera->front;
+        glm::mat4 view = glm::lookAt(renderer->camera->pos, camera_target, renderer->camera->up); 
 
-        mat4 projection = {};
-        glm_perspective(glm_rad(renderer->camera->view_angle_deg),
+        glm::mat4 projection = glm::perspective(glm::radians(renderer->camera->view_angle_deg),
                 (f32)renderer->vp_width/(f32)renderer->vp_height,
-                renderer->camera->z_near,
-                renderer->camera->z_far,
-                projection);
+                camera->z_near,
+                camera->z_far);
 
         Transform *transform = &renderme->transform;
-        mat4 model = {};
-        glm_mat4_identity(model);
-        glm_translate(model, transform->translation);
-        glm_rotate(model, glm_rad(transform->rotation[0]), vec3 { 1.0f, 0.0f, 0.0f });
-        glm_rotate(model, glm_rad(transform->rotation[1]), vec3 { 0.0f, 1.0f, 0.0f });
-        glm_rotate(model, glm_rad(transform->rotation[2]), vec3 { 0.0f, 0.0f, 1.0f });
-        glm_scale(model, transform->scale);
+        glm::mat4 model(1.0f);
+        model = glm::translate(model, transform->translation);
+        model = glm::rotate(model, glm::radians(transform->rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(transform->rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(transform->rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        model = glm::scale(model, transform->scale);
 
         // Set debug color uniform
         {

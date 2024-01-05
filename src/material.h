@@ -1,12 +1,12 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include <cglm/cglm.h>
+#include <glm/glm.hpp>
 
 struct Material {
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
     float shininess;
 };
 
@@ -31,7 +31,7 @@ struct Material {
     0.078125\
 })
 
-Material mat_make(Material base_material, vec3 color);
+Material mat_make(Material base_material, glm::vec3 color);
 
 #endif // MATERIAL_H
 

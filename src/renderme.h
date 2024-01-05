@@ -1,17 +1,17 @@
 #ifndef RENDERME_H
 #define RENDERME_H
 
-#include <cglm/cglm.h>
-
 #include "core/types.h"
 #include "core/vec.h"
 #include "material.h"
 #include "wavefront.h"
 
+#include <glm/glm.hpp>
+
 struct Transform {
-    vec3 scale;
-    vec3 rotation;
-    vec3 translation;
+    glm::vec3 scale;
+    glm::vec3 rotation;
+    glm::vec3 translation;
 };
 
 typedef u32 RenderMeFlags;
@@ -50,7 +50,7 @@ struct RenderMe {
     b8 show_debug;
 
     // debug fragment color
-    vec3 debug_color;
+    glm::vec3 debug_color;
 
     // debug VAO
     u32 debug_VAO;

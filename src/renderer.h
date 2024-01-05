@@ -1,7 +1,7 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include <cglm/cglm.h>
+#include <glm/glm.hpp>
 
 #include "core/types.h"
 #include "camera.h"

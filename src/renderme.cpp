@@ -2,7 +2,6 @@
 
 #include "renderme.h"
 #include "core/vec.h"
-#include "cglm/vec3.h"
 #include "io.h"
 
 #include "mesh_utils.h"
@@ -191,14 +190,14 @@ Vec<f32> __create_debug_vertices(Vec<f32> debug_positions, Vec<f32> debug_cube_v
 
     for (u32 i=0; i<debug_positions.len()-2; i+=3) {
         for (u32 j=0; j<debug_cube_verts.len()-2; j+=3) {
-            vec3 v = {debug_cube_verts[j+0],
+            glm::vec3 v(debug_cube_verts[j+0],
                            debug_cube_verts[j+1],
-                           debug_cube_verts[j+2]};
-            glm_vec3_scale(v, DEBUG_SCALE, v);
-            glm_vec3_add(v, vec3 {debug_positions[i+0], debug_positions[i+1], debug_positions[i+2]}, v);
-            result.push_back(v[0]);
-            result.push_back(v[1]);
-            result.push_back(v[2]);
+                           debug_cube_verts[j+2]);
+            v *= DEBUG_SCALE;
+            v += glm::vec3(debug_positions[i+0], debug_positions[i+1], debug_positions[i+2]);
+            result.push_back(v.x);
+            result.push_back(v.y);
+            result.push_back(v.z);
         }
     }
 
@@ -279,9 +278,9 @@ RenderMe rdrme_create(Vec<f32> data, RenderMeFlags flags, Material material) {
     // array_print(&data);
 #endif
 
-    glm_vec3_copy(vec3 { 0.0f, 0.0f, 0.0f }, result.transform.rotation);
-    glm_vec3_copy(vec3 { 0.0f, 0.0f, 0.0f }, result.transform.translation);
-    glm_vec3_copy(vec3 { 1.0f, 1.0f, 1.0f }, result.transform.scale);
+    result.transform.rotation = { 0.0f, 0.0f, 0.0f };
+    result.transform.translation = { 0.0f, 0.0f, 0.0f };
+    result.transform.scale = { 1.0f, 1.0f, 1.0f };
 
     // TODO: indices should be given from caller
     result.shader_indices = Vec<f32>(4);

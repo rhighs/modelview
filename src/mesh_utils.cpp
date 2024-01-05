@@ -5,13 +5,11 @@
 #endif
 
 static
-void __mu_gen_face_normal(vec3 v1, vec3 v2, vec3 v3, vec3 result) {
-    vec3 v1v2;
-    vec3 v1v3;
-    glm_vec3_sub(v2, v1, v1v2);
-    glm_vec3_sub(v3, v1, v1v3);
-    glm_vec3_cross(v1v2, v1v3, result);
-    glm_vec3_norm(result);
+glm::vec3 __mu_gen_face_normal(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) {
+    glm::vec3 v1v2 = v2 - v1;
+    glm::vec3 v1v3 = v3 - v1;
+    glm::vec3 result = glm::cross(v1v2, v1v3);
+    return result;
 }
 
 Vec<f32> mu_gen_normals(const Vec<f32>& vertices) {
@@ -20,15 +18,14 @@ Vec<f32> mu_gen_normals(const Vec<f32>& vertices) {
     Vec<f32> result(vertices.len());
 
     for (u32 i=0; i<vertices_len-8; i+=9) {
-        vec3 v1 = { vertices[i+0], vertices[i+1], vertices[i+2] };
-        vec3 v2 = { vertices[i+3], vertices[i+4], vertices[i+5] };
-        vec3 v3 = { vertices[i+6], vertices[i+7], vertices[i+8] };
+        glm::vec3 v1(vertices[i+0], vertices[i+1], vertices[i+2]);
+        glm::vec3 v2(vertices[i+3], vertices[i+4], vertices[i+5]);
+        glm::vec3 v3(vertices[i+6], vertices[i+7], vertices[i+8]);
 
-        vec3 normal;
-        __mu_gen_face_normal(v1, v2, v3, normal);
-        result.push_back(normal[0]); result.push_back(normal[1]); result.push_back(normal[2]);
-        result.push_back(normal[0]); result.push_back(normal[1]); result.push_back(normal[2]);
-        result.push_back(normal[0]); result.push_back(normal[1]); result.push_back(normal[2]);
+        glm::vec3 normal = __mu_gen_face_normal(v1, v2, v3);
+        result.push_back(normal.x); result.push_back(normal.y); result.push_back(normal.z);
+        result.push_back(normal.x); result.push_back(normal.y); result.push_back(normal.z);
+        result.push_back(normal.x); result.push_back(normal.y); result.push_back(normal.z);
     }
 
     return result;
@@ -47,8 +44,8 @@ void mu_interpolate_normals(Vec<f32>& normals, Vec<u32>& indices) {
     }
 
     for (u32 i=0; i<tmp.len()-3; i+=3) {
-        vec3 vn = { tmp[i+0], tmp[i+1], tmp[i+2] };
-        glm_vec3_normalize(vn);
+        glm::vec3 vn = { tmp[i+0], tmp[i+1], tmp[i+2] };
+        vn = glm::normalize(vn);
         tmp[i+0]=vn[0]; tmp[i+1]=vn[1]; tmp[i+2]=vn[2];
     }
 

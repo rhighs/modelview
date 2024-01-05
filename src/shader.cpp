@@ -1,5 +1,5 @@
 #include <glad/glad.h>
-#include <cglm/cglm.h>
+#include <glm/glm.hpp>
 
 #include "shader.h"
 #include "io.h"
@@ -20,21 +20,21 @@ void sp_use(ShaderProgram *program) {
 }
 
 void sp_set_uniform_vec3f(ShaderProgram *program, const char* uniform,
-        vec3 v) {
+        glm::vec3 v) {
     const i32 uniform_location = glGetUniformLocation(program->program, uniform);
     glUniform3f(uniform_location, v[0], v[1], v[2]);
 }
 
 void sp_set_uniform_vec4f(ShaderProgram *program, const char* uniform,
-        vec4 v) {
+        glm::vec4 v) {
     const i32 uniform_location = glGetUniformLocation(program->program, uniform);
     glUniform4f(uniform_location, v[0], v[1], v[2], v[3]);
 }
 
 void sp_set_uniform_mat4(ShaderProgram *program, const char* uniform,
-        const mat4 mat) {
+        const glm::mat4 &mat) {
     const i32 uniform_location = glGetUniformLocation(program->program, uniform);
-    glUniformMatrix4fv(uniform_location, 1, GL_FALSE, (float *)mat);
+    glUniformMatrix4fv(uniform_location, 1, GL_FALSE, &mat[0][0]);
 }
 
 void sp_set_uniform_float(ShaderProgram *program, const char* uniform,

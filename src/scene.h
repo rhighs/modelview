@@ -3,17 +3,16 @@
 
 #include "core/types.h"
 
-#include <cglm/vec3.h>
-#include <cglm/vec4.h>
+#include <glm/glm.hpp>
 
 #include "core/vec.h"
 
 struct PointLight {
-    vec4 position;
+    glm::vec4 position;
 
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
 
     f32 att_constant;
     f32 att_linear;
@@ -23,11 +22,11 @@ struct PointLight {
 };
 
 struct DirectionalLight {
-    vec4 direction;
+    glm::vec4 direction;
 
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
 
     f32 intensity;
 };
@@ -37,9 +36,9 @@ struct Scene {
     Vec<DirectionalLight> directional_lights;
 };
 
-PointLight pt_light_make(vec3 position, vec3 ambient, vec3 diffuse, vec3 specular);
+PointLight pt_light_make(glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular);
 
-DirectionalLight dir_light_make(vec3 direction, vec3 ambient, vec3 diffuse, vec3 specular);
+DirectionalLight dir_light_make(glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular);
 
 Scene scene_init();
 
@@ -47,8 +46,8 @@ void scene_add_point_light(Scene *scene, PointLight point_light);
 
 void scene_add_directional_light(Scene *scene, DirectionalLight directional_light);
 
-PointLight point_light_make(vec3 position, vec3 ambient, vec3 diffuse, vec3 specular);
+PointLight point_light_make(glm::vec3 position, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular);
  
-DirectionalLight directional_light_make(vec3 direction, vec3 ambient, vec3 diffuse, vec3 specular);
+DirectionalLight directional_light_make(glm::vec3 direction, glm::vec3 ambient, glm::vec3 diffuse, glm::vec3 specular);
 
 #endif // LIGHT_H

@@ -1,7 +1,7 @@
 #ifndef MESH_UTILS_H
 #define MESH_UTILS_H
 
-#include <cglm/cglm.h>
+#include <glm/glm.hpp>
 #include "core/vec.h"
 #include "core/types.h"
 

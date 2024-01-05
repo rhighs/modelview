@@ -1,4 +1,3 @@
-#include "cglm/vec3.h"
 #include "io.h"
 #include "scene.h"
 #include <cctype>
@@ -16,7 +15,7 @@
 #include "SDL.h"
 #define PROGRAM_NAME "test"
 
-#include <cglm/cglm.h>
+#include <glm/glm.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -94,7 +93,7 @@ int main(int argc, char *argv[]) {
     SDL_Window *mainwindow;
     SDL_GLContext maincontext;
 
-    const vec3 CLEAR_COLOR = { .8f, 0.9f, .8f };
+    const glm::vec3 CLEAR_COLOR = { .8f, 0.9f, .8f };
 
     u32 win_height = 720;
     u32 win_width = 1280;
@@ -157,7 +156,7 @@ int main(int argc, char *argv[]) {
 
     glEnable(GL_DEPTH_TEST);
 
-    vec3 camera_pos = { 0.0f, 0.0f, 3.0f };
+    glm::vec3 camera_pos = { 0.0f, 0.0f, 3.0f };
 
     Camera camera;
 
@@ -173,12 +172,12 @@ int main(int argc, char *argv[]) {
 
     // Light coloring and shader stuff
     Material material = mat_make(MAT_CHROME,
-            vec3 { 1.0f, .7f, 0.0f });
+            glm::vec3(1.0f, .7f, 0.0f));
 
     RenderMe rme = rdrme_from_obj(&mymodel, material, TRUE, TRUE);
     rdrme_setup_debug(&rme, debug_points);
 
-    glm_vec3_copy(vec3 { .05f, .05f, .05f }, rme.transform.scale);
+    rme.transform.scale = glm::vec3(.05f, .05f, .05f);
 
     Renderer renderer = rdr_init(&camera, win_width, win_height);
     camera_init(renderer.camera, camera_pos);
@@ -186,11 +185,11 @@ int main(int argc, char *argv[]) {
     const f32 light_x = cos(SDL_GetTicks()/1000.0f) * 1.0f;
     const f32 light_z = sin(SDL_GetTicks()/1000.0f) * 1.0f;
 
-    vec3 light_position = { light_x, 10.0f, light_z };
-    vec3 light_color = { 1.0f, 1.0f, 1.0f };
+    glm::vec3 light_position = { light_x, 10.0f, light_z };
+    glm::vec3 light_color = { 1.0f, 1.0f, 1.0f };
 
     PointLight main_light = point_light_make(light_position, light_color, light_color, light_color);
-    DirectionalLight dir_light = directional_light_make(vec3 { -0.5, -0.5, -0.5 }, light_color, light_color, light_color);
+    DirectionalLight dir_light = directional_light_make(glm::vec3(-0.5, -0.5, -0.5), light_color, light_color, light_color);
 
     Scene main_scene = scene_init();
     scene_add_point_light(&main_scene, main_light);

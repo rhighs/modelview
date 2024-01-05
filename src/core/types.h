@@ -46,11 +46,11 @@ typedef int                     i32;
 typedef long long int           i64;
 
 #ifdef __cplusplus
-typedef bool    b8;
+typedef bool b8;
 #define TRUE    true
 #define FALSE   false
 #else
-typedef unsigned char           b8;
+typdef unsigned char b8;
 #define TRUE    ((b8)0x1)
 #define FALSE   ((b8)0x0)
 #endif
