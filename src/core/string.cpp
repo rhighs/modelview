@@ -11,6 +11,26 @@ bool String::starts_with(const String &other) const {
     return substr == other;
 }
 
+_NO_DISCARD_
+bool String::starts_with(const _STRING_CHAR_TYPE *c_string) const {
+    u32 len = strlen(c_string);
+    if (len > this->len()) return false;
+
+    for (u32 k=0; k<len; k++)
+        if (c_string[k] != (*this)[k]) return false;
+
+    return true;
+}
+
+template<size_t N>
+String String::from(const char (&string)[N]) {
+    String result;
+    result._c_data._no_dealloc = true;
+    result._c_data._raw_data = (u8*)string;
+    *(result._c_data._len()) = N;
+    return result;
+}
+
 String String::from(const _STRING_CHAR_TYPE *c_string) {
     u32 c_len = _STRING_GET_LEN_FUNC(c_string);
     String result = String::with_capacity(c_len);
@@ -31,9 +51,14 @@ String String::strip(const _STRING_CHAR_TYPE strip_ch) const {
     while (*start == strip_ch) start++;
     _STRING_CHAR_TYPE *end = _c_data.raw() + len();
     while (*end == strip_ch) end--;
-    if (start >= end)
-        return String();
-    return String::from(start, (u32)(end-start));
+    String result;
+    if (start >= end) {
+        result = String();
+    } else {
+        result = String::from(start, (u32)(end-start));
+    }
+    IO_LOG(stdout, "string strip result from %s to %s", this->raw(), result.raw());
+    return result;
 }
 
 Vec<String> String::lines() const {
@@ -93,7 +118,7 @@ Vec<String> String::split(_STRING_CHAR_TYPE token) const {
             current.push_back(c);
         } else {
             result.push_back(current);
-            current = String();
+            current.clear();
         }
     }
     result.push_back(current);
@@ -114,4 +139,21 @@ _STRING_CHAR_TYPE* String::raw() const {
    _STRING_CHAR_TYPE *end = _c_data.raw() + *(_c_data._len());
    *(end) = _STRING_CHAR_TYPE_TERM;
    return _c_data.raw();
+}
+
+_NO_DISCARD_
+Pair<f32, b8> String::to_f32() const {
+    DEV_ASSERT(sizeof(_STRING_CHAR_TYPE) == 1, "string must be made of C characters, 1 byte in size");
+
+    char *str = this->raw();
+    f32 result = strtof(str, NULL);
+    if (result == 0.0f)
+        return { 0.0f, false };
+
+    return { result, true };
+}
+
+void String::clear() {
+    _c_data.dealloc();
+    _c_data.alloc();
 }

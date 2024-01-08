@@ -140,12 +140,12 @@ int main(int argc, char *argv[]) {
     // This makes our buffer swap syncronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
 
-    String png_path = Loader::resolve_filepath("./res/models/lambo/lambo.png");
-    LoadedImage texture_data = io_read_image_file(png_path.raw());
-    bind_texture_info(texture_data);
-    stbi_image_free(texture_data.data);
+    // String png_path = Loader::resolve_filepath("./res/models/lambo/lambo.png");
+    // LoadedImage texture_data = io_read_image_file(png_path.raw());
+    // bind_texture_info(texture_data);
+    // stbi_image_free(texture_data.data);
     
-    glActiveTexture(GL_TEXTURE0);
+    // glActiveTexture(GL_TEXTURE0);
 
     SDL_Event event;
     i32 running = 1;
@@ -160,13 +160,28 @@ int main(int argc, char *argv[]) {
 
     Camera camera;
 
-    String obj_path = Loader::resolve_filepath("./res/models/lambo/lambo.obj");
+    String obj_path = Loader::resolve_filepath("./res/models/winter_girl/Winter Girl.obj");
     OBJModel mymodel = wf_load_obj_model(obj_path.raw());
     IO_LOG(stdout, "[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d",
             mymodel.vertices.len(),
             mymodel.normals.len(),
             mymodel.tex_coords.len(),
             mymodel.faces.len());
+
+    String f32_test = String::from("1.22345");
+    Pair<f32, b8> r = f32_test.to_f32();
+    if (r.second == false) {
+        printf("parsing failed");
+        exit(1);
+    }
+    printf("PARSED VALUE = %f\n", r.first);
+
+    String mtl_path = Loader::resolve_filepath("./res/models/winter_girl/Winter Girl.mtl");
+    Vec<OBJMaterial> mtl_data = wf_load_obj_material_data(mtl_path.raw());
+    for (OBJMaterial &mtl: mtl_data) {
+        String mtl_str = mtl.print();
+        printf("%s\n", mtl_str.raw());
+    }
 
     Vec<f32> debug_points = mymodel.vertices;
 
@@ -177,7 +192,7 @@ int main(int argc, char *argv[]) {
     RenderMe rme = rdrme_from_obj(&mymodel, material, TRUE, TRUE);
     rdrme_setup_debug(&rme, debug_points);
 
-    rme.transform.scale = glm::vec3(.05f, .05f, .05f);
+    // rme.transform.scale = glm::vec3(.05f, .05f, .05f);
 
     Renderer renderer = rdr_init(&camera, win_width, win_height);
     camera_init(renderer.camera, camera_pos);

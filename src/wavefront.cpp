@@ -262,3 +262,121 @@ OBJModel wf_load_obj_model(const char *path) {
     return result;
 }
 
+static
+glm::vec3 parse_f32_triplet(const String *from) {
+    glm::vec3 result(0.0f);
+    String values_str = from->strip(' ');
+    Vec<String> values = values_str.split(' ');
+    if (values.len() < 3) {
+        return result;
+    }
+    result.x = values[0].to_f32().first;
+    result.y = values[1].to_f32().first;
+    result.z = values[2].to_f32().first;
+    return result;
+}
+
+Vec<OBJMaterial> wf_load_obj_material_data(const char *path) {
+    Vec<OBJMaterial> result;
+    u8 *buf = NULL;
+
+    u32 filesize = io_read_file(path, &buf);
+    char *buf_str =  (char *)buf;
+
+    String owned_str = String::from(buf_str);
+    Vec<String> lines = owned_str.lines();
+
+    String first = lines[0];
+    IO_LOG(stdout, "first line = %s", first.raw());
+
+    OBJMaterial current_material;
+    for (String& line : lines) {
+        line = line.strip(' ');
+
+        // temp: this is how a new material definition is determined
+        if (line.len() == 0) {
+            result.push_back(current_material);
+            current_material = {};
+            continue;
+        }
+
+        IO_LOG(stdout, "just read line = %s", line.raw());
+
+        const b8 is_comment = line[0] == '#';
+        if (is_comment) continue;
+
+        if (line.starts_with("newmtl")) {
+            Vec<String> tokens = line.split(' ');
+            String name = tokens[1];
+            IO_LOG(stdout, "found name = %s", name.raw());
+            current_material.name = name;
+        } else if (line.starts_with("K")) {
+            String values_str = line.substr(3, line.len()-4);
+            switch (line[1]) {
+                case 'a':
+                current_material.ambient = parse_f32_triplet(&values_str); break;
+                case 'd':
+                current_material.diffuse = parse_f32_triplet(&values_str); break;
+                case 's':
+                current_material.specular = parse_f32_triplet(&values_str); break;
+            }
+        } else if (line.starts_with(String::from("i"))) {
+            Vec<String> tokens = line.split(' ');
+            String token = tokens[1];
+            Pair<f32, bool> result = token.to_f32();
+            u8 illum_value = (u8)result.first;
+            current_material.illum_state = illum_value;
+        } else if (line.starts_with("Ns")) {
+            Vec<String> tokens = line.split(' ');
+            String token = tokens[1];
+            Pair<f32, bool> result = token.to_f32();
+            f32 shininess_value = result.first;
+            current_material.shininess = shininess_value;
+        } else if (line.starts_with(String::from("d")) || line.starts_with(String::from("Tr"))) {
+            Vec<String> tokens = line.split(' ');
+            String token = tokens[1];
+            Pair<f32, bool> result = token.to_f32();
+            f32 transparency_value = result.first;
+            current_material.transparency = transparency_value;
+        } else if (line.starts_with(String::from("map_Ka"))) {
+            Vec<String> tokens = line.split(' ');
+            String token = tokens[1];
+            String relative_mtl_texturemap_path = token.strip(' ');
+            current_material.texture_filepath = relative_mtl_texturemap_path;
+        }
+    }
+
+    free(buf);
+    return result;
+}
+
+#include <stdio.h>
+String OBJMaterial::print() const {
+    char *buffer = (char *)malloc(sizeof(char) * 256);
+    int error = sprintf(buffer, 
+            "Material {\n"
+            "\tname = %s\n"
+            "\tambient = (%f, %f, %f)\n"
+            "\tdiffuse = (%f, %f, %f)\n"
+            "\tspecular = (%f, %f, %f)\n"
+            "\tillum = %d\n"
+            "\tshininess = %f\n"
+            "\ttransparency = %f\n"
+            "}", 
+            this->name.raw(),
+            this->ambient.x,
+            this->ambient.y,
+            this->ambient.z,
+            this->diffuse.x,
+            this->diffuse.y,
+            this->diffuse.z,
+            this->specular.x,
+            this->specular.y,
+            this->specular.z,
+            this->illum_state,
+            this->shininess,
+            this->transparency
+            );
+    DEV_ASSERT(!error, "material string formatting has failed");
+    return String::from(buffer);
+}

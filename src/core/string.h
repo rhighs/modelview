@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
+#include "tuple.h"
 #include "vec.h"
 #include "container.h"
 
@@ -13,9 +14,13 @@
 struct String {
     Container<_STRING_CHAR_TYPE> _c_data;
 
-    _FORCE_INLINE_ String() {}
+    _FORCE_INLINE_ String(String &s) {
+        this->_c_data = s._c_data.clone();
+    }
+
+    _FORCE_INLINE_ String() : _c_data(16) {}
     _FORCE_INLINE_ String(u32 count) : _c_data(count) {}
-    _FORCE_INLINE_ ~String() {}
+    _FORCE_INLINE_ ~String() { _c_data.dealloc(); }
     inline void operator=(const String& from) {
         _c_data._raw_data = from._c_data._raw_data;
     }
@@ -38,15 +43,22 @@ struct String {
     _NO_DISCARD_ Vec<String> split(_STRING_CHAR_TYPE token) const;
     _NO_DISCARD_ Vec<String> split_str(const String &other) const;
     _NO_DISCARD_ String substr(u32 from, u32 len) const;
+
+    template<size_t N> _NO_DISCARD_ static String from(const char (&string)[N]);
     _NO_DISCARD_ static String from(const _STRING_CHAR_TYPE *c_string);
     _NO_DISCARD_ static String from(const _STRING_CHAR_TYPE* c_string, u32 len);
 
     _NO_DISCARD_ bool starts_with(const String& other) const;
+    _NO_DISCARD_ bool starts_with(const _STRING_CHAR_TYPE *c_string) const;
     _FORCE_INLINE_ u32 len() const { return _c_data.len(); }
     _FORCE_INLINE_ void append(const String &other) { _c_data.append(other._c_data); };
     _NO_DISCARD_ String strip(const _STRING_CHAR_TYPE strip_ch = ' ') const;
 
+    _NO_DISCARD_ Pair<f32, b8> to_f32() const;
+
     Vec<String> lines() const;
+
+    _FORCE_INLINE_ void clear();
 
     _STRING_CHAR_TYPE* begin() const { return _c_data.raw(); }
     _STRING_CHAR_TYPE* end() const { return _c_data.raw() + _c_data.len(); }
