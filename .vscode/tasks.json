@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build unix",
+            "type": "shell",
+            "command": "bash ${workspaceFolder}/compile"
+        },
+        {
+            "label": "build win32",
+            "type": "shell",
+            "command": "start ${workspaceFolder}/compile.bat"
+        }
+    ]
+}

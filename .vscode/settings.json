@@ -1,5 +1,7 @@
 {
     "files.associations": {
+        "*.erd": "json",
+        "*.vuerd": "json",
         "*.tcc": "cpp",
         "numeric": "cpp",
         "optional": "cpp",
@@ -8,6 +10,15 @@
         "__bit_reference": "cpp",
         "__split_buffer": "cpp",
         "vector": "cpp",
-        "xstring": "cpp"
+        "xstring": "cpp",
+        "cmath": "cpp",
+        "atomic": "cpp",
+        "deque": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "fstream": "cpp",
+        "limits": "cpp",
+        "sstream": "cpp",
+        "system_error": "cpp"
     }
 }
