@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 
 #include "io.h"
+#include "core/error.h"
 
 b8 __PRESSED_KEYS[SDL_NUM_SCANCODES] = { FALSE };
 
@@ -14,9 +15,8 @@ b8 io_is_key_pressed(SDL_Scancode code) {
 }
 
 void io_change_state(SDL_Scancode code, const b8 pressed) {
-#ifdef MDEBUG
-    fprintf(stdout, "[%s:%d] keycode %d state: %d\n",
-            __FUNCTION__, __LINE__, (u32)code, pressed);
+#ifdef IODEBUG
+    IO_LOG(stdout, "keycode %d state = %d", (u32)code, pressed);
 #endif
     assert((u32)code < SDL_NUM_SCANCODES);
     __PRESSED_KEYS[code] = pressed;
@@ -30,15 +30,12 @@ i32 __read_file_size(const char *filepath) {
 }
 
 u32 io_read_file(const char* filepath, u8 **buf_ptr) {
-#ifdef MDEBUG
-    fprintf(stdout, "[%s:%d] reading file: %s\n",
-            __FUNCTION__, __LINE__, filepath);
-#endif
+    IO_LOG(stdout, "reading file %s", filepath);
     FILE *file = fopen(filepath, "rb");
 
     i32 filesize = __read_file_size(filepath);
     if (filesize == -1) {
-        fprintf(stderr, "Could not read file: %s\n", filepath);
+        IO_LOG(stderr, "could not read file %s", filepath);
         *buf_ptr = NULL;
         return 0;
     }
@@ -58,9 +55,9 @@ LoadedImage io_read_image_file(const char * image_path) {
     stbi_set_flip_vertically_on_load(1);
     u8 *image_data = stbi_load(image_path, &image_width, &image_height, &nr_channels, 0);
 
-    if (stbi_failure_reason()) {
-        fprintf(stderr, "Failed reading %s reason: %s\n",
-                image_path, stbi_failure_reason());
+    char *stbi_reason = NULL;
+    if ((stbi_reason = (char *)stbi_failure_reason()) != NULL) {
+        IO_LOG(stderr, "failed reading %s reason: \"%s\" - exiting...", image_path, stbi_reason);
         exit(1);
     }
 
@@ -73,4 +70,3 @@ LoadedImage io_read_image_file(const char * image_path) {
 
     return result;
 }
-

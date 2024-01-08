@@ -1,6 +1,5 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/matrix_transform.inl>
 #include <glad/glad.h>
 
 #include "core/vec.h"

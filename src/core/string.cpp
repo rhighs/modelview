@@ -26,7 +26,7 @@ template<size_t N>
 String String::from(const char (&string)[N]) {
     String result;
     result._c_data._no_dealloc = true;
-    result._c_data._raw_data = (u8*)string;
+    result._c_data._raw_data = (_STRING_CHAR_TYPE*)string;
     *(result._c_data._len()) = N;
     return result;
 }
