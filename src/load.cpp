@@ -5,7 +5,7 @@
 
 static
 bool is_win_abs(const String& path) {
-    String win_abs_prefix = String::from(":\\");
+    String win_abs_prefix(":\\");
     String substr = path.substr(1, path.len()-1);
     bool is_abs = substr.starts_with(win_abs_prefix);
     return is_abs;
@@ -13,7 +13,7 @@ bool is_win_abs(const String& path) {
 
 static
 bool is_unix_abs(const String &path) {
-    String unix_abs_prefix = String::from("/");
+    String unix_abs_prefix("/");
     bool is_abs = path.starts_with(unix_abs_prefix);
     return is_abs;
 }
@@ -32,7 +32,7 @@ String replace_slashes(const String& path) {
 }
 
 String Loader::resolve_filepath(const char *filepath) {
-    String filepath_str = String::from(filepath);
+    String filepath_str = String::copy_from(filepath);
 #ifdef _WIN32
     if (is_unix_abs(filepath_str)) {
         IO_LOG(stderr, "cannot use unix absolute path notation on a win32 system...");

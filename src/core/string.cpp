@@ -1,6 +1,9 @@
 #include "string.h"
+#include "container.h"
+#include "types.h"
 #include "vec.h"
 
+#include <cstring>
 #include <stdio.h>
 #include <memory.h>
 #include <assert.h>
@@ -22,27 +25,26 @@ bool String::starts_with(const _STRING_CHAR_TYPE *c_string) const {
     return true;
 }
 
-template<size_t N>
-String String::from(const char (&string)[N]) {
-    String result;
-    result._c_data._no_dealloc = true;
-    result._c_data._raw_data = (_STRING_CHAR_TYPE*)string;
-    *(result._c_data._len()) = N;
-    return result;
-}
-
-String String::from(const _STRING_CHAR_TYPE *c_string) {
+_NO_DISCARD_
+String String::copy_from(const _STRING_CHAR_TYPE *c_string) {
     u32 c_len = _STRING_GET_LEN_FUNC(c_string);
-    String result = String::with_capacity(c_len);
-    memcpy(result._c_data._raw_data, c_string, c_len * sizeof(_STRING_CHAR_TYPE));
-    *(result._c_data._len()) = c_len;
-    return result;
+    if (c_len > 0) {
+        String result(c_len);
+        strcpy(result._c_data._raw_data, c_string);
+        *(result._c_data._len()) = c_len;
+        return result;
+    }
+    return String();
 }
 
-String String::from(const _STRING_CHAR_TYPE* c_string, u32 len) {
-    String result = String::with_capacity(len);
-    memcpy(result._c_data._raw_data, c_string, len * sizeof(_STRING_CHAR_TYPE));
-    *(result._c_data._len()) = len;
+String String::copy_from(const _STRING_CHAR_TYPE *c_string, u32 len) {
+    String result;
+    u32 c_len = _STRING_GET_LEN_FUNC(c_string);
+    if (c_len > 0) {
+        result._c_data = Container<_STRING_CHAR_TYPE>(c_len + 1);
+        memcpy(result._c_data._raw_data, c_string, len * sizeof(_STRING_CHAR_TYPE));
+        *(result._c_data._len()) = c_len;
+    }
     return result;
 }
 
@@ -55,22 +57,24 @@ String String::strip(const _STRING_CHAR_TYPE strip_ch) const {
     if (start >= end) {
         result = String();
     } else {
-        result = String::from(start, (u32)(end-start));
+        u32 len = ((u32)(end-start));
+        result = String::with_capacity(len);
+        memcpy(result._c_data._raw_data, start, len * sizeof(_STRING_CHAR_TYPE));
+        *(result._c_data._len()) = len;
     }
-    IO_LOG(stdout, "string strip result from %s to %s", this->raw(), result.raw());
     return result;
 }
 
 Vec<String> String::lines() const {
-#ifdef _WIN32
-    return this->split_str(String::from("\r\n"));
-#else
-    return this->split('\n');
-#endif
+    if (this->contains(String("\r\n"))) {
+        return this->split_str(String("\r\n"));
+    } else {
+        return this->split('\n');
+    }
 }
 
 _NO_DISCARD_
-bool String::operator==(const String& other) const {
+b8 String::operator==(const String& other) const {
     _STRING_CHAR_TYPE *s1 = this->raw();
     _STRING_CHAR_TYPE *s2 = other.raw();
     return !strcmp(s1, s2);
@@ -99,13 +103,12 @@ Vec<String> String::split_str(const String& other) const {
 
 _NO_DISCARD_
 String String::substr(u32 from, u32 len) const {
-    if (from >= this->len() || from + len > this->len())
-        return String();
+    DEV_ASSERT(from >= this->len() || from + len > this->len(), "invalid substr params: out bounds");
 
-    _STRING_CHAR_TYPE *data = (_STRING_CHAR_TYPE *)malloc(sizeof(_STRING_CHAR_TYPE) * len);
-    memccpy(data, this->raw() + from, len + 1, sizeof(_STRING_CHAR_TYPE));
-    data[len] = '\0';
-    String result = String::from(data);
+    _STRING_CHAR_TYPE *data = (_STRING_CHAR_TYPE *)malloc(sizeof(_STRING_CHAR_TYPE) * (len + 1));
+    memcpy(data, this->_c_data._raw_data + from, sizeof(_STRING_CHAR_TYPE) * len);
+    data[len] = _STRING_CHAR_TYPE_TERM;
+    String result = String::copy_from(data);
     return result;
 }
 
@@ -125,9 +128,6 @@ Vec<String> String::split(_STRING_CHAR_TYPE token) const {
     return result;
 }
 
-// assume all types end in '\0'
-#define _STRING_CHAR_TYPE_TERM '\0'
-
 // sets a null character at the end of the internal container
 _STRING_CHAR_TYPE* String::raw() const {
     /* FIXME: this could happen, inore it for now
@@ -143,7 +143,7 @@ _STRING_CHAR_TYPE* String::raw() const {
 
 _NO_DISCARD_
 Pair<f32, b8> String::to_f32() const {
-    DEV_ASSERT(sizeof(_STRING_CHAR_TYPE) == 1, "string must be made of C characters, 1 byte in size");
+    DEV_ASSERT(sizeof(_STRING_CHAR_TYPE) == 1, "string must be made of C characters");
 
     char *str = this->raw();
     f32 result = strtof(str, NULL);
@@ -153,7 +153,32 @@ Pair<f32, b8> String::to_f32() const {
     return { result, true };
 }
 
-void String::clear() {
-    _c_data.dealloc();
-    _c_data.alloc();
+_NO_DISCARD_
+String String::replace(const String &str_a, const String &str_b) const {
+    String result;
+    u32 i=0;
+    for (;i<this->len()-str_a.len(); i++) {
+        String window = this->substr(i, str_a.len());
+        if (window == str_a) {
+            result += str_b;
+            i += str_a.len();
+            continue;
+        } else {
+            const _STRING_CHAR_TYPE current_char = (*this)[i];
+            result += current_char;
+        }
+    }
+    result += this->substr(i, this->len() - i);
+    return result;
 }
+
+_NO_DISCARD_
+b8 String::contains(const String &str) const {
+    for (u32 i=0; i<(this->len()-str.len()); i++) {
+        String window = this->substr(i, str.len());
+        if (window == str)
+            return TRUE;
+    }
+    return FALSE;
+}
+

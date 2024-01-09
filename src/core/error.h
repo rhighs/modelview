@@ -13,5 +13,9 @@
     } else ((void)(0))                                                 
 #endif
 #else
-#define DEV_ASSERT(COND, MSG) ((void)(0))
+// #define DEV_ASSERT(COND, MSG) ((void)(0))
+#define DEV_ASSERT(COND, MSG)                                                                \
+    if (!(COND)) {                                                                              \
+        IO_LOG(stderr, "(FORCED_DEVMODE) assertion = %s failed, message = %s", #COND, MSG);   \
+    } else ((void)(0))                                                 
 #endif

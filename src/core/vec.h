@@ -111,7 +111,7 @@ template<typename T>
 Vec<T>::Vec(const T &value, u32 count) {
     _c_data = Container<T>(count);
     T *base = _c_data.raw();
-    DEV_ASSERT(base != null, "container base must be initialized to perform an init operation");
+    DEV_ASSERT(base != nullptr, "container base must be initialized to perform an init operation");
 
     // set the length alrady to be used later,
     // this is only really used to perform container specific fills

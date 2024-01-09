@@ -3,6 +3,8 @@
 #include "wavefront.h"
 #include "core/string.h"
 
+#include <utility>
+
 #include "io.h"
 
 const u32 FACE_QUAD_ORDER[15] = {
@@ -22,7 +24,7 @@ u32 __compute_quad_max_end(u32 nfaces) {
 }
 
 u32 __parse_f32_values(Vec<f32> *dst, const char *from, const u32 limit) {
-    String line = String::from(from);
+    String line = String::copy_from(from);
     Vec<String> values = line.strip().split(' ');
 
     u32 added = 0;
@@ -39,7 +41,7 @@ u32 __parse_f32_values(Vec<f32> *dst, const char *from, const u32 limit) {
 void __parse_face_data(Vec<Vec<OBJFaceVertex>> *dst, const char *from) {
     Vec<OBJFaceVertex> result;
 
-    String line = String::from(from);
+    String line = String::copy_from(from);
     Vec<String> defs = line.strip().split(' ');
 
     for (u32 i=0; i<defs.len(); i++) {
@@ -227,15 +229,28 @@ OBJModel wf_load_obj_model(const char *path) {
 
     char *content = NULL;
     u32 len = io_read_file(path, (u8 **)&content);
-    String string_content = String::from(content, len);
-
     if (content == NULL) {
         IO_LOG(stderr, "Error reading file: %s", path);
         exit(1);
     }
 
-    Vec<String> lines = string_content.split('\n');
+    String string_content = String::copy_from(content, len);
+    //string_content = string_content.replace(String::from("\r\n"), String::from("\n"));
+    u32 total_new_lines = 0;
+    for (char c : string_content) {
+        if (c == '\n')
+            total_new_lines++;
+    }
+    IO_LOG(stdout, "n new lines found = %d", total_new_lines);
+    if (string_content.contains(String("\r\n"))) {
+        IO_LOG(stderr, "data still contains win32 CRLF", NULL);
+        exit(1);
+    }
+
+    Vec<String> lines = string_content.lines();
+    // IO_LOG(stdout, "lines found in file %s = %d", path, lines.len());
     for (const String& line : lines) {
+        IO_LOG(stdout, "line = %s", line.raw());
         const char *raw_line_data = line.raw();
         const char first_token = raw_line_data[0];
         switch (first_token) {
@@ -281,9 +296,9 @@ Vec<OBJMaterial> wf_load_obj_material_data(const char *path) {
     u8 *buf = NULL;
 
     u32 filesize = io_read_file(path, &buf);
-    char *buf_str =  (char *)buf;
+    char *buf_str = (char *)buf;
 
-    String owned_str = String::from(buf_str);
+    String owned_str = String::copy_from(buf_str);
     Vec<String> lines = owned_str.lines();
 
     String first = lines[0];
@@ -292,6 +307,7 @@ Vec<OBJMaterial> wf_load_obj_material_data(const char *path) {
     OBJMaterial current_material;
     for (String& line : lines) {
         line = line.strip(' ');
+        IO_LOG(stdout, "strip result = %s", line.raw());
 
         // temp: this is how a new material definition is determined
         if (line.len() == 0) {
@@ -301,7 +317,6 @@ Vec<OBJMaterial> wf_load_obj_material_data(const char *path) {
         }
 
         IO_LOG(stdout, "just read line = %s", line.raw());
-
         const b8 is_comment = line[0] == '#';
         if (is_comment) continue;
 
@@ -320,7 +335,7 @@ Vec<OBJMaterial> wf_load_obj_material_data(const char *path) {
                 case 's':
                 current_material.specular = parse_f32_triplet(&values_str); break;
             }
-        } else if (line.starts_with(String::from("i"))) {
+        } else if (line.starts_with(String("i"))) {
             Vec<String> tokens = line.split(' ');
             String token = tokens[1];
             Pair<f32, bool> result = token.to_f32();
@@ -332,13 +347,13 @@ Vec<OBJMaterial> wf_load_obj_material_data(const char *path) {
             Pair<f32, bool> result = token.to_f32();
             f32 shininess_value = result.first;
             current_material.shininess = shininess_value;
-        } else if (line.starts_with(String::from("d")) || line.starts_with(String::from("Tr"))) {
+        } else if (line.starts_with(String("d")) || line.starts_with(String("Tr"))) {
             Vec<String> tokens = line.split(' ');
             String token = tokens[1];
             Pair<f32, bool> result = token.to_f32();
             f32 transparency_value = result.first;
             current_material.transparency = transparency_value;
-        } else if (line.starts_with(String::from("map_Ka"))) {
+        } else if (line.starts_with(String("map_Ka"))) {
             Vec<String> tokens = line.split(' ');
             String token = tokens[1];
             String relative_mtl_texturemap_path = token.strip(' ');
@@ -378,5 +393,7 @@ String OBJMaterial::print() const {
             this->transparency
             );
     DEV_ASSERT(!error, "material string formatting has failed");
-    return String::from(buffer);
+    String result = String::copy_from(buffer);
+    free(buffer);
+    return result;
 }

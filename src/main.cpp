@@ -1,3 +1,4 @@
+#include "core/string.h"
 #include "io.h"
 #include "scene.h"
 #include <cctype>
@@ -93,6 +94,22 @@ int main(int argc, char *argv[]) {
     SDL_Window *mainwindow;
     SDL_GLContext maincontext;
 
+    // testing shit in here:
+    {
+        char static_data[] = "ciao ciao ciao ciao";
+        char *buffer = NULL;
+        if ((buffer = (char *)malloc(strlen(static_data)+1)) != NULL) {
+            strcpy(buffer, static_data);
+            u32 len = strlen(static_data);
+            IO_LOG(stdout, "static_data strlen() = %d", len);
+            buffer[len] = '\0';
+            String some_str = String::copy_from(buffer);
+            some_str = some_str.replace(String("ciao"), String("hello"));
+            IO_LOG(stdout, "replaced content = \"%s\"", some_str.raw());
+            return EXIT_SUCCESS;
+        }
+    }
+
     const glm::vec3 CLEAR_COLOR = { .8f, 0.9f, .8f };
 
     u32 win_height = 720;
@@ -140,12 +157,12 @@ int main(int argc, char *argv[]) {
     // This makes our buffer swap syncronized with the monitor's vertical refresh
     SDL_GL_SetSwapInterval(1);
 
-    // String png_path = Loader::resolve_filepath("./res/models/lambo/lambo.png");
-    // LoadedImage texture_data = io_read_image_file(png_path.raw());
-    // bind_texture_info(texture_data);
-    // stbi_image_free(texture_data.data);
+    String png_path = Loader::resolve_filepath("./res/models/lambo/lambo.png");
+    LoadedImage texture_data = io_read_image_file(png_path.raw());
+    bind_texture_info(texture_data);
+    stbi_image_free(texture_data.data);
     
-    // glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE0);
 
     SDL_Event event;
     i32 running = 1;
@@ -160,7 +177,8 @@ int main(int argc, char *argv[]) {
 
     Camera camera;
 
-    String obj_path = Loader::resolve_filepath("./res/models/winter_girl/Winter Girl.obj");
+    String obj_model_filepath = String("./res/models/lambo/lambo.obj");
+    String obj_path = Loader::resolve_filepath(obj_model_filepath.raw());
     OBJModel mymodel = wf_load_obj_model(obj_path.raw());
     IO_LOG(stdout, "[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d",
             mymodel.vertices.len(),
@@ -168,7 +186,7 @@ int main(int argc, char *argv[]) {
             mymodel.tex_coords.len(),
             mymodel.faces.len());
 
-    String f32_test = String::from("1.22345");
+    String f32_test = String("1.22345");
     Pair<f32, b8> r = f32_test.to_f32();
     if (r.second == false) {
         printf("parsing failed");
@@ -176,12 +194,12 @@ int main(int argc, char *argv[]) {
     }
     printf("PARSED VALUE = %f\n", r.first);
 
-    String mtl_path = Loader::resolve_filepath("./res/models/winter_girl/Winter Girl.mtl");
-    Vec<OBJMaterial> mtl_data = wf_load_obj_material_data(mtl_path.raw());
-    for (OBJMaterial &mtl: mtl_data) {
-        String mtl_str = mtl.print();
-        printf("%s\n", mtl_str.raw());
-    }
+    // String mtl_path = Loader::resolve_filepath("./res/models/winter_girl/Winter Girl.mtl");
+    // Vec<OBJMaterial> mtl_data = wf_load_obj_material_data(mtl_path.raw());
+    // for (OBJMaterial &mtl: mtl_data) {
+    //     String mtl_str = mtl.print();
+    //     printf("%s\n", mtl_str.raw());
+    // }
 
     Vec<f32> debug_points = mymodel.vertices;
 

@@ -30,7 +30,7 @@ struct Container {
     _FORCE_INLINE_ Container<T> clone() const;
 
     _FORCE_INLINE_ void dealloc();
-    _FORCE_INLINE_ u32 len() const { return *_len(); }
+    _FORCE_INLINE_ u32 len() const { return _raw_data != nullptr ? *_len() : 0; }
     _FORCE_INLINE_ T& get_value(u32 at) const { return *reinterpret_cast<T *>(_get_value(at)); }
 
     _FORCE_INLINE_ void push_back(const T &value);
@@ -49,6 +49,9 @@ struct Container {
 
 template<typename T>
 void Container<T>::clear() {
+    if (_raw_data == nullptr)
+        return;
+
     const u32 current_capacity = *(_capacity());
     if (!current_capacity) return;
     const u32 alloc_capacity = current_capacity + sizeof(u32) * 2;
@@ -63,7 +66,6 @@ template<typename T>
 void Container<T>::reset(const T& value) {
     const u32 current_capacity = *(_capacity());
     if (!current_capacity) return;
-    const u32 alloc_capacity = current_capacity + sizeof(u32) * 2;
 
     u32* base_ptr = reinterpret_cast<u32*>(_raw_data) - 2;
     u8* base_bytes_ptr = reinterpret_cast<u8*>(base_ptr);
@@ -159,9 +161,13 @@ T Container<T>::pop_back() {
 
 template<typename T>
 void Container<T>::append(const Container<T> &other) {
-    u32 current_capacity = *(_capacity());
-    _realloc_for(current_capacity + *(other._capacity()));
-    memcpy(_raw_data + *(_len()), other._raw_data, sizeof(T) * other.len());
+    u32 other_len = *(other._len());
+    if (other_len > 0) {
+        u32 current_capacity = *(_capacity());
+        _realloc_for(current_capacity + *(other._capacity()));
+        u32 current_len = *(_len());
+        memcpy((void *)(_raw_data + current_len), (void *)other._raw_data, sizeof(T) * other.len());
+    }
 }
 
 template<typename T>
@@ -177,9 +183,10 @@ template <typename T>
 void Container<T>::_alloc(u32 count) {
     const u32 alloc = count * sizeof(T);
     const u32 meta_alloc = sizeof(u32) * 2;
-    void *malloc_result = malloc(meta_alloc + alloc);
+    void *malloc_result;
+    DEV_ASSERT((malloc_result = malloc(meta_alloc + alloc)) != NULL, "get some memory");
     u32* base_ptr = reinterpret_cast<u32*>(malloc_result);
-    DEV_ASSERT(base_ptr != null, "this must be able to allocate on init");
+    DEV_ASSERT(base_ptr != NULL, "this must be able to allocate on init");
     // make space for meta_data ensured by "meta_alloc"
     T* raw_data = reinterpret_cast<T*>(base_ptr + 2);
     _raw_data = raw_data;
