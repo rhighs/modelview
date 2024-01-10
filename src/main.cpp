@@ -1,3 +1,4 @@
+#include "SDL_video.h"
 #include "core/string.h"
 #include "io.h"
 #include "scene.h"
@@ -34,6 +35,9 @@
 #include "renderme.h"
 
 #include "load.h"
+
+#define GL_CONTEXT_MAJOR 4
+#define GL_CONTEXT_MINOR 1
 
 /* A simple function that prints a message, the error code returned by SDL,
  * and quits the application */
@@ -94,33 +98,17 @@ int main(int argc, char *argv[]) {
     SDL_Window *mainwindow;
     SDL_GLContext maincontext;
 
-    // testing shit in here:
-    {
-        char static_data[] = "ciao ciao ciao ciao";
-        char *buffer = NULL;
-        if ((buffer = (char *)malloc(strlen(static_data)+1)) != NULL) {
-            strcpy(buffer, static_data);
-            u32 len = strlen(static_data);
-            IO_LOG(stdout, "static_data strlen() = %d", len);
-            buffer[len] = '\0';
-            String some_str = String::copy_from(buffer);
-            some_str = some_str.replace(String("ciao"), String("hello"));
-            IO_LOG(stdout, "replaced content = \"%s\"", some_str.raw());
-            return EXIT_SUCCESS;
-        }
-    }
-
     const glm::vec3 CLEAR_COLOR = { .8f, 0.9f, .8f };
 
     u32 win_height = 720;
     u32 win_width = 1280;
 
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) 
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) 
         sdldie("Unable to initialize SDL");
 
     // Request opengl 3.2 context.
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, GL_CONTEXT_MAJOR);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, GL_CONTEXT_MINOR);
 
     /* Turn on double buffering with a 24bit Z buffer.
      * You may need to change this to 16 or 32 for your system */
@@ -148,7 +136,7 @@ int main(int argc, char *argv[]) {
     maincontext = SDL_GL_CreateContext(mainwindow);
     checkSDLError(__LINE__);
 
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+    if (gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress) == 0) {
         fprintf(stderr, "Failed to initialize glad\n");
         return -1;
     }

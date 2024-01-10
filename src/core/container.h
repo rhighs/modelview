@@ -12,7 +12,7 @@
 template<typename T>
 struct Container {
     u32 _default_alloc_size = CONTAINER_DEFAULT_ALLOC;
-    T *_raw_data = nullptr;
+    T *_raw_data = NULL;
 
     Container(u32 count = 4) { _default_alloc_size = count; if (_default_alloc_size > 0) _alloc(_default_alloc_size); };
     Container(T *raw_data) : _raw_data(raw_data) {};
@@ -29,12 +29,12 @@ struct Container {
     _NO_DISCARD_ Container<T> clone() const;
 
     void dealloc();
-    _FORCE_INLINE_ _NO_DISCARD_ u32 len() const { return _raw_data != nullptr ? *_len() : 0; }
+    _FORCE_INLINE_ _NO_DISCARD_ u32 len() const { return _raw_data != NULL ? *_len() : 0; }
     _FORCE_INLINE_ _NO_DISCARD_ T& get_value(u32 at) const { return *reinterpret_cast<T *>(_get_value(at)); }
 
     _FORCE_INLINE_ void push_back(const T &value);
-    _FORCE_INLINE_ void append(const Container<T> &other);
     _FORCE_INLINE_ _NO_DISCARD_ T pop_back();
+    void append(const T *data, u32 len);
 
     u32 __get_min_realloc_size(u32 realloc_factor = 2) const;
 
@@ -48,7 +48,7 @@ struct Container {
 
 template<typename T>
 void Container<T>::clear() {
-    if (_raw_data == nullptr)
+    if (_raw_data == NULL)
         return;
 
     const u32 current_capacity = *(_capacity());
@@ -89,7 +89,7 @@ u32 Container<T>::__get_min_realloc_size(u32 realloc_factor) const {
 
 template<typename T>
 void Container<T>::_realloc() {
-    if (_raw_data == nullptr) {
+    if (_raw_data == NULL) {
         _alloc(_default_alloc_size); 
     }
 
@@ -110,7 +110,7 @@ void Container<T>::_realloc() {
 
 template<typename T>
 void Container<T>::_realloc_for(u32 reach_capacity) {
-    if (_raw_data == nullptr) {
+    if (_raw_data == NULL) {
         _alloc(reach_capacity / sizeof(T)); 
     }
 
@@ -129,6 +129,7 @@ void Container<T>::_realloc_for(u32 reach_capacity) {
     }
 
     T *raw_data = reinterpret_cast<T *>(reinterpret_cast<u32*>(current_base) + 2);
+    _raw_data = raw_data;
     *(_len()) = current_len;
     *(_capacity()) = alloc;
 }
@@ -159,24 +160,28 @@ T Container<T>::pop_back() {
 }
 
 template<typename T>
-void Container<T>::append(const Container<T> &other) {
-    u32 other_len = *(other._len());
-    if (other_len > 0) {
-        u32 current_capacity = *(_capacity());
-        _realloc_for(current_capacity + *(other._capacity()));
-        u32 current_len = *(_len());
-        memcpy((void *)(_raw_data + current_len), (void *)other._raw_data, sizeof(T) * other.len());
-    }
+void Container<T>::append(const T *data, u32 len) {
+    if (len == 0) return;
+
+    u32 current_len = *(_len());
+    u32 copy_n_bytes = len * sizeof(T);
+    u32 current_capacity = *(_capacity());
+    u32 realloc_for_bytes = current_capacity + copy_n_bytes;
+    _realloc_for(realloc_for_bytes);
+
+    // u8 *copy_dst_ptr = &(((u8 *)_raw_data)[current_len]);
+    u8 *copy_dst_ptr = reinterpret_cast<u8 *>(_raw_data + current_len);
+    u8 *copy_src_ptr = (u8 *)(data);
+    memcpy(copy_dst_ptr, copy_src_ptr, copy_n_bytes);
+    *(_len()) = current_len + len;
 }
 
 template<typename T>
 void Container<T>::dealloc() {
-    IO_LOG(stdout, "calling dealloc() on _raw_data = %p %s", (void*)_raw_data, _raw_data);
     if (this->_raw_data != NULL) {
-        T* tmp = _raw_data;
-        u32* base = reinterpret_cast<u32 *>(tmp) - 2;
+        u8* base = reinterpret_cast<u8 *>(reinterpret_cast<u32 *>(_raw_data) - 2);
         free(base);
-        this->_raw_data = NULL;
+        _raw_data = NULL;
     }
 }
 
@@ -185,9 +190,12 @@ void Container<T>::_alloc(u32 count) {
     const u32 alloc = count * sizeof(T);
     const u32 meta_alloc = sizeof(u32) * 2;
     void *malloc_result;
-    DEV_ASSERT((malloc_result = malloc(meta_alloc + alloc)) != NULL, "get some memory");
+    if ((malloc_result = malloc(meta_alloc + alloc)) == NULL) {
+        IO_LOG(stderr, "malloc failed, exiting...", NULL);
+        exit(1);
+    }
+
     u32* base_ptr = reinterpret_cast<u32*>(malloc_result);
-    DEV_ASSERT(base_ptr != NULL, "this must be able to allocate on init");
     // make space for meta_data ensured by "meta_alloc"
     T* raw_data = reinterpret_cast<T*>(base_ptr + 2);
     _raw_data = raw_data;
@@ -197,7 +205,7 @@ void Container<T>::_alloc(u32 count) {
 
 template <typename T>
 Container<T> Container<T>::clone() const {
-    if (_raw_data == nullptr || *(_capacity()) == 0)
+    if (_raw_data == NULL || *(_capacity()) == 0)
         return Container<T>();
 
     u32 current_capacity = *(_capacity());

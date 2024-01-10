@@ -103,12 +103,12 @@ Vec<String> String::split_str(const String& other) const {
 
 _NO_DISCARD_
 String String::substr(u32 from, u32 len) const {
-    DEV_ASSERT(len > 0 && from <= this->len() && from + len < this->len(), "invalid substr params: out bounds");
+    DEV_ASSERT(len > 0 && from <= this->len() && from + len <= this->len(), "invalid substr params: out bounds");
+    if (len == 0) return String();
 
-    _STRING_CHAR_TYPE *data = (_STRING_CHAR_TYPE *)malloc(sizeof(_STRING_CHAR_TYPE) * len);
-    memcpy(data, this->_c_data._raw_data + from, sizeof(_STRING_CHAR_TYPE) * len);
     String result(len);
-    memcpy(result._c_data._raw_data, data, len * sizeof(_STRING_CHAR_TYPE));
+    _STRING_CHAR_TYPE *copy_src_ptr = &((_STRING_CHAR_TYPE *)(this->_c_data._raw_data))[from];
+    memcpy(result._c_data._raw_data, copy_src_ptr, len * sizeof(_STRING_CHAR_TYPE));
     *(result._c_data._len()) = len;
     return result;
 }
@@ -137,10 +137,12 @@ _STRING_CHAR_TYPE* String::raw() const {
         len() == potential_max_len
     }
     */
-    if (_is_literal == FALSE) {
-        _STRING_CHAR_TYPE* end = _c_data.raw() + *(_c_data._len());
-        *(end) = _STRING_CHAR_TYPE_TERM;
-    }
+   if (_is_literal == FALSE) {
+       _STRING_CHAR_TYPE *base = _c_data._raw_data;
+       u32 offset = *(_c_data._len());
+       _STRING_CHAR_TYPE* end = &base[offset];
+       *(end) = _STRING_CHAR_TYPE_TERM;
+   }
    return _c_data.raw();
 }
 
@@ -161,19 +163,28 @@ String String::replace(const String &str_a, const String &str_b) const {
     String result;
     u32 i=0;
     String window;
-    for (;i<this->len()-str_a.len(); i++) {
-        window = this->substr(i, str_a.len());
+    u32 current_len = this->len();
+    for (;i<current_len-str_a.len()+1; i++) {
+        window = substr(i, str_a.len());
         if (window == str_a) {
-            result += str_b;
-            i += str_a.len();
+            result.append(str_b);
+            i += str_a.len()-1;
             continue;
         } else {
             const _STRING_CHAR_TYPE current_char = (*this)[i];
-            result += current_char;
+            result.push_back(current_char);
         }
     }
-    u32 current_len = this->len();
-    result += this->substr(i, current_len - i);
+    if (i < current_len) {
+        u32 rtail_len = current_len - i;
+        if (rtail_len == 1) {
+            _STRING_CHAR_TYPE ch = (*this)[current_len - 1];
+            result.push_back(ch);
+        } else {
+            String rtail = substr(i, rtail_len);
+            result.append(rtail);
+        }
+    }
     return result;
 }
 

@@ -235,20 +235,11 @@ OBJModel wf_load_obj_model(const char *path) {
     }
 
     String string_content = String::copy_from(content, len);
-    //string_content = string_content.replace(String::from("\r\n"), String::from("\n"));
-    u32 total_new_lines = 0;
-    for (char c : string_content) {
-        if (c == '\n')
-            total_new_lines++;
-    }
-    IO_LOG(stdout, "n new lines found = %d", total_new_lines);
     if (string_content.contains(String("\r\n"))) {
-        IO_LOG(stderr, "data still contains win32 CRLF", NULL);
-        exit(1);
+        string_content = string_content.replace(String("\r\n"), String("\n"));
     }
 
-    Vec<String> lines = string_content.lines();
-    // IO_LOG(stdout, "lines found in file %s = %d", path, lines.len());
+    Vec<String> lines = string_content.split('\n');
     for (const String& line : lines) {
         IO_LOG(stdout, "line = %s", line.raw());
         const char *raw_line_data = line.raw();
