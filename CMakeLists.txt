@@ -5,6 +5,9 @@ set( CMAKE_CXX_STANDARD 17 )
 set( CMAKE_CXX_STANDARD_REQUIRED True )
 set( CMAKE_CXX_COMPILER /usr/bin/clang++ CACHE PATH "" )
 
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+
 # define dev debug symbol
 if (WIN32)
     set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /DDEV_ENABLED" )
@@ -43,8 +46,5 @@ target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/ext
 target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/cglm/include )
 target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/glm )
 target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/stb )
-
-add_compile_options(-fsanitize=address)
-add_link_options(-fsanitize=address)
 
 target_compile_options( ${PROJECT_NAME} PRIVATE -Wall )
