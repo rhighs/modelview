@@ -1,5 +1,4 @@
 #include "scene.h"
-#include "cglm/vec4.h"
 
 #include <glm/glm.hpp>
 

@@ -19,14 +19,13 @@ struct String {
 
     template<u32 N>
     constexpr String(const _STRING_CHAR_TYPE (&string)[N]) {
-        _c_data._no_dealloc = TRUE;
         _c_data._raw_data = (_STRING_CHAR_TYPE*)string;
         _is_literal = TRUE;
         // *(_c_data._len()) = N;
     }
 
     _FORCE_INLINE_ String(String &&s) {
-        this->_c_data = s._c_data;
+        this->_c_data._raw_data = s._c_data._raw_data;
         s._c_data._raw_data = nullptr;
     }
     _FORCE_INLINE_ void operator=(String &&s) {
@@ -37,8 +36,7 @@ struct String {
     _FORCE_INLINE_ String(const String &s) { this->_c_data = s._c_data.clone(); }
     _FORCE_INLINE_ void operator=(const String &s) { this->_c_data = s._c_data.clone(); }
 
-    _FORCE_INLINE_ String() : _c_data(16) {}
-    _FORCE_INLINE_ String(u32 count) : _c_data(count) {}
+    _FORCE_INLINE_ String(u32 count = 4) : _c_data(count) {}
     _FORCE_INLINE_ ~String() { _c_data.dealloc(); }
 
     _FORCE_INLINE_ _NO_DISCARD_
@@ -48,6 +46,8 @@ struct String {
         return result;
     };
 
+    _FORCE_INLINE_ void _own_literal() { DEV_ASSERT(this->_is_literal, "must be literal in order to own it!"); (*this) = String::copy_from(this->raw()); }
+
     _NO_DISCARD_ String replace(const String& str_a, const String& str_b) const;
     _NO_DISCARD_ bool contains(const String& str) const;
 
@@ -56,9 +56,9 @@ struct String {
     _FORCE_INLINE_ void operator+=(_STRING_CHAR_TYPE value) { _c_data.push_back(value); }
     _FORCE_INLINE_ _STRING_CHAR_TYPE operator[](u32 at) const { return _c_data.get_value(at); };
 
-    _FORCE_INLINE_ void push_back(_STRING_CHAR_TYPE value) { _c_data.push_back(value); };
-    _FORCE_INLINE_ void append(const String& other) { _c_data.append(other._c_data); }
-    _FORCE_INLINE_ void clear() { _c_data.reset(_STRING_CHAR_TYPE_TERM); }
+    _FORCE_INLINE_ void push_back(_STRING_CHAR_TYPE value) { if (_is_literal) _own_literal(); _c_data.push_back(value); };
+    _FORCE_INLINE_ void append(const String& other) { if (_is_literal) _own_literal(); _c_data.append(other._c_data); }
+    _FORCE_INLINE_ void clear() { if (_is_literal) return; _c_data.reset(_STRING_CHAR_TYPE_TERM); }
 
     _NO_DISCARD_ _STRING_CHAR_TYPE* raw() const;
     _NO_DISCARD_ Vec<String> split(_STRING_CHAR_TYPE token) const;

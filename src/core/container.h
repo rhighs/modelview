@@ -13,38 +13,37 @@ template<typename T>
 struct Container {
     u32 _default_alloc_size = CONTAINER_DEFAULT_ALLOC;
     T *_raw_data = nullptr;
-    b8 _no_dealloc = false;
 
     Container(u32 count = 4) { _default_alloc_size = count; if (_default_alloc_size > 0) _alloc(_default_alloc_size); };
     Container(T *raw_data) : _raw_data(raw_data) {};
-    _FORCE_INLINE_ void alloc() { _alloc(_default_alloc_size); };
-    _FORCE_INLINE_ void _alloc(u32 count);
+    void alloc() { _alloc(_default_alloc_size); };
+    void _alloc(u32 count);
 
     _FORCE_INLINE_ _NO_DISCARD_ T* raw() const { return _raw_data; }
     _FORCE_INLINE_ T* _get_value(u32 at) const { return _raw_data + at; }
     _FORCE_INLINE_ u32* _len() const { return reinterpret_cast<u32 *>(_raw_data) - 1; }
     _FORCE_INLINE_ u32* _capacity() const { return reinterpret_cast<u32 *>(_raw_data) - 2; }
-    _FORCE_INLINE_ void _realloc();
-    _FORCE_INLINE_ void _realloc_for(u32 reach_capacity);
+    void _realloc();
+    void _realloc_for(u32 reach_capacity);
 
-    _FORCE_INLINE_ Container<T> clone() const;
+    _NO_DISCARD_ Container<T> clone() const;
 
-    _FORCE_INLINE_ void dealloc();
-    _FORCE_INLINE_ u32 len() const { return _raw_data != nullptr ? *_len() : 0; }
-    _FORCE_INLINE_ T& get_value(u32 at) const { return *reinterpret_cast<T *>(_get_value(at)); }
+    void dealloc();
+    _FORCE_INLINE_ _NO_DISCARD_ u32 len() const { return _raw_data != nullptr ? *_len() : 0; }
+    _FORCE_INLINE_ _NO_DISCARD_ T& get_value(u32 at) const { return *reinterpret_cast<T *>(_get_value(at)); }
 
     _FORCE_INLINE_ void push_back(const T &value);
     _FORCE_INLINE_ void append(const Container<T> &other);
-    _NO_DISCARD_ _FORCE_INLINE_ T pop_back();
+    _FORCE_INLINE_ _NO_DISCARD_ T pop_back();
 
-    _FORCE_INLINE_ u32 __get_min_realloc_size(u32 realloc_factor = 2) const;
+    u32 __get_min_realloc_size(u32 realloc_factor = 2) const;
 
     // sets all allocated memory to 0 from ((u32 *) raw_data) - 2.
     // capacity will be kept, but len will be reset to 0
-    _FORCE_INLINE_ void clear();
+    void clear();
 
     // same as clear, but sets memory to reset_value
-    _FORCE_INLINE_ void reset(const T& reset_value);
+    void reset(const T& reset_value);
 };
 
 template<typename T>
@@ -172,10 +171,12 @@ void Container<T>::append(const Container<T> &other) {
 
 template<typename T>
 void Container<T>::dealloc() {
-    if (_raw_data != nullptr && _no_dealloc == FALSE) {
-        u32* base = reinterpret_cast<u32*>(_raw_data) - 2;
+    IO_LOG(stdout, "calling dealloc() on _raw_data = %p %s", (void*)_raw_data, _raw_data);
+    if (this->_raw_data != NULL) {
+        T* tmp = _raw_data;
+        u32* base = reinterpret_cast<u32 *>(tmp) - 2;
         free(base);
-        _raw_data = nullptr;
+        this->_raw_data = NULL;
     }
 }
 

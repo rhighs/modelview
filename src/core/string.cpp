@@ -103,12 +103,13 @@ Vec<String> String::split_str(const String& other) const {
 
 _NO_DISCARD_
 String String::substr(u32 from, u32 len) const {
-    DEV_ASSERT(from >= this->len() || from + len > this->len(), "invalid substr params: out bounds");
+    DEV_ASSERT(len > 0 && from <= this->len() && from + len < this->len(), "invalid substr params: out bounds");
 
-    _STRING_CHAR_TYPE *data = (_STRING_CHAR_TYPE *)malloc(sizeof(_STRING_CHAR_TYPE) * (len + 1));
+    _STRING_CHAR_TYPE *data = (_STRING_CHAR_TYPE *)malloc(sizeof(_STRING_CHAR_TYPE) * len);
     memcpy(data, this->_c_data._raw_data + from, sizeof(_STRING_CHAR_TYPE) * len);
-    data[len] = _STRING_CHAR_TYPE_TERM;
-    String result = String::copy_from(data);
+    String result(len);
+    memcpy(result._c_data._raw_data, data, len * sizeof(_STRING_CHAR_TYPE));
+    *(result._c_data._len()) = len;
     return result;
 }
 
@@ -136,8 +137,10 @@ _STRING_CHAR_TYPE* String::raw() const {
         len() == potential_max_len
     }
     */
-   _STRING_CHAR_TYPE *end = _c_data.raw() + *(_c_data._len());
-   *(end) = _STRING_CHAR_TYPE_TERM;
+    if (_is_literal == FALSE) {
+        _STRING_CHAR_TYPE* end = _c_data.raw() + *(_c_data._len());
+        *(end) = _STRING_CHAR_TYPE_TERM;
+    }
    return _c_data.raw();
 }
 
@@ -157,8 +160,9 @@ _NO_DISCARD_
 String String::replace(const String &str_a, const String &str_b) const {
     String result;
     u32 i=0;
+    String window;
     for (;i<this->len()-str_a.len(); i++) {
-        String window = this->substr(i, str_a.len());
+        window = this->substr(i, str_a.len());
         if (window == str_a) {
             result += str_b;
             i += str_a.len();
@@ -168,7 +172,8 @@ String String::replace(const String &str_a, const String &str_b) const {
             result += current_char;
         }
     }
-    result += this->substr(i, this->len() - i);
+    u32 current_len = this->len();
+    result += this->substr(i, current_len - i);
     return result;
 }
 
