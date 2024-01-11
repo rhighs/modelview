@@ -241,7 +241,6 @@ OBJModel wf_load_obj_model(const char *path) {
 
     Vec<String> lines = string_content.split('\n');
     for (const String& line : lines) {
-        IO_LOG(stdout, "line = %s", line.raw());
         const char *raw_line_data = line.raw();
         const char first_token = raw_line_data[0];
         switch (first_token) {
@@ -293,12 +292,10 @@ Vec<OBJMaterial> wf_load_obj_material_data(const char *path) {
     Vec<String> lines = owned_str.lines();
 
     String first = lines[0];
-    IO_LOG(stdout, "first line = %s", first.raw());
 
     OBJMaterial current_material;
     for (String& line : lines) {
         line = line.strip(' ');
-        IO_LOG(stdout, "strip result = %s", line.raw());
 
         // temp: this is how a new material definition is determined
         if (line.len() == 0) {
@@ -307,7 +304,6 @@ Vec<OBJMaterial> wf_load_obj_material_data(const char *path) {
             continue;
         }
 
-        IO_LOG(stdout, "just read line = %s", line.raw());
         const b8 is_comment = line[0] == '#';
         if (is_comment) continue;
 

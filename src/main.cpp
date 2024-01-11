@@ -3,6 +3,7 @@
 #include "io.h"
 #include "scene.h"
 #include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,8 +37,8 @@
 
 #include "load.h"
 
-#define GL_CONTEXT_MAJOR 4
-#define GL_CONTEXT_MINOR 1
+#define GL_CONTEXT_MAJOR 3
+#define GL_CONTEXT_MINOR 2
 
 /* A simple function that prints a message, the error code returned by SDL,
  * and quits the application */
@@ -103,7 +104,7 @@ int main(int argc, char *argv[]) {
     u32 win_height = 720;
     u32 win_width = 1280;
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) 
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) 
         sdldie("Unable to initialize SDL");
 
     // Request opengl 3.2 context.
@@ -114,6 +115,8 @@ int main(int argc, char *argv[]) {
      * You may need to change this to 16 or 32 for your system */
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     mainwindow = SDL_CreateWindow(PROGRAM_NAME,
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -162,7 +165,6 @@ int main(int argc, char *argv[]) {
     glEnable(GL_DEPTH_TEST);
 
     glm::vec3 camera_pos = { 0.0f, 0.0f, 3.0f };
-
     Camera camera;
 
     String obj_model_filepath = String("./res/models/lambo/lambo.obj");
