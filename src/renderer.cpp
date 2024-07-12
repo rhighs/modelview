@@ -196,3 +196,13 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
     __rdr_draw(renderer, scene, renderme);
 }
 
+void rdr_clear_color(const glm::vec4 *color) {
+    glClearColor(
+            (*color)[0],
+            (*color)[1],
+            (*color)[2],
+            (*color)[3]);
+
+    // depth buffer cleared here atm...
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}

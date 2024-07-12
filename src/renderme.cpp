@@ -325,22 +325,17 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
         if (interp_normals == TRUE) {
             Vec<u32> indices = wf_model_extract_indices(model);
             mu_interpolate_normals(normals, indices);
-            
         }
 
         rendering_data = zip_v_vn_tex(vertices, normals, texcoords);
-
-        
-        
-        
 
         rdrme_creation_flags = RDRME_LIGHT
             | RDRME_TEXTURE
             | RDRME_NORMAL;
     } else if (has_normals) {
+        Vec<f32> normals; 
         Vec<f32> vertices = wf_model_extract_vertices(model);
 
-        Vec<f32> normals; 
         if (gen_normals == TRUE) {
             normals = mu_gen_normals(vertices);
         } else {
@@ -350,14 +345,10 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
         if (interp_normals == TRUE) {
             Vec<u32> indices = wf_model_extract_indices(model);
             mu_interpolate_normals(normals, indices);
-            
         }
 
         rendering_data = zip_v_vn(vertices, normals);
-
         
-        
-
         rdrme_creation_flags = RDRME_LIGHT
             | RDRME_NORMAL;
     } else if (has_texture) {
@@ -371,14 +362,9 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
             Vec<u32> indices = wf_model_extract_indices(model);
             mu_interpolate_normals(normals, indices);
             rendering_data = zip_v_vn_tex(vertices, normals, texcoords);
-
-            
         } else {
             rendering_data = zip_v_tex(vertices, texcoords);
         }
-
-        
-        
 
         rdrme_creation_flags = RDRME_LIGHT
             | RDRME_TEXTURE
@@ -392,14 +378,9 @@ RenderMe rdrme_from_obj(OBJModel *model, Material material,
             Vec<u32> indices = wf_model_extract_indices(model);
             mu_interpolate_normals(normals, indices);
             rendering_data = zip_v_vn(vertices, normals);
-
-            
         } else {
             rendering_data = Vec<f32>::from(vertices._c_data.raw(), vertices.len());
         }
-
-        
-        
 
         rdrme_creation_flags = RDRME_LIGHT
             | (has_normals ? RDRME_NORMAL : 0x0);

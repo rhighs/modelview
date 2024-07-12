@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     SDL_Window *mainwindow;
     SDL_GLContext maincontext;
 
-    const glm::vec3 CLEAR_COLOR = { .8f, 0.9f, .8f };
+    const glm::vec4 CLEAR_COLOR = { .8f, 0.9f, .8f, 1.0f };
 
     u32 win_height = 720;
     u32 win_width = 1280;
@@ -278,12 +278,7 @@ int main(int argc, char *argv[]) {
         main_scene.point_lights[0].position[0] = (f32)((1 + sin(((f64)SDL_GetTicks64())/1000.0)) * 10.0) - 5.0;
         main_scene.point_lights[0].intensity = 5.0f;
 
-        glClearColor(
-                CLEAR_COLOR[0],
-                CLEAR_COLOR[1],
-                CLEAR_COLOR[2],
-                1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        rdr_clear_color(&CLEAR_COLOR);
 
         for (u32 rdr_i=0; rdr_i<render_list.len(); rdr_i++) {
             RenderMe *renderme = render_list[rdr_i];
@@ -301,3 +296,4 @@ quit:
 
     return 0;
 }
+

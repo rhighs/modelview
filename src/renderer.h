@@ -20,4 +20,6 @@ Renderer rdr_init(Camera *camera, u32 width, u32 height);
 
 void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme);
 
+void rdr_clear_color(const glm::vec4 *color);
+
 #endif // RENDERER_H
