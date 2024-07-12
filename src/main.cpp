@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
     RenderMe rme = rdrme_from_obj(&mymodel, material, TRUE, TRUE);
     rdrme_setup_debug(&rme, debug_points);
 
-    // rme.transform.scale = glm::vec3(.05f, .05f, .05f);
+    rme.transform.scale = glm::vec3(.05f, .05f, .05f);
 
     Renderer renderer = rdr_init(&camera, win_width, win_height);
     camera_init(renderer.camera, camera_pos);
