@@ -14,6 +14,7 @@ struct Renderer {
     Camera *camera;
     u32 vp_width;
     u32 vp_height;
+    b8 show_debug_normals;
 };
 
 Renderer rdr_init(Camera *camera, u32 width, u32 height);

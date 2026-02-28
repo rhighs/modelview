@@ -30,9 +30,18 @@ set( SDL2_SHARED ON CACHE BOOL "" FORCE )
 # Build link step
 file( GLOB_RECURSE SOURCES "src/*.cpp" )
 file( GLOB_RECURSE HEADERS "src/*.h" )
+set( IMGUI_SOURCES
+    ${CMAKE_SOURCE_DIR}/external/imgui/imgui.cpp
+    ${CMAKE_SOURCE_DIR}/external/imgui/imgui_draw.cpp
+    ${CMAKE_SOURCE_DIR}/external/imgui/imgui_tables.cpp
+    ${CMAKE_SOURCE_DIR}/external/imgui/imgui_widgets.cpp
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_sdl2.cpp
+    ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_opengl3.cpp
+)
 add_executable( ${PROJECT_NAME}
     ${SOURCES}
     ${HEADERS}
+    ${IMGUI_SOURCES}
 )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${CMAKE_PROJECT_NAME} )
@@ -54,8 +63,11 @@ target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/ext
 target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/cglm/include )
 target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/glm )
 target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/stb )
+target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/imgui )
+target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/imgui/backends )
 
 target_compile_definitions( ${PROJECT_NAME} PRIVATE DEV_ENABLED )
+target_compile_definitions( ${PROJECT_NAME} PRIVATE IMGUI_IMPL_OPENGL_LOADER_GLAD )
 if( APPLE )
     target_compile_definitions( ${PROJECT_NAME} PRIVATE GL_SILENCE_DEPRECATION )
 endif()

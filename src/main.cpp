@@ -13,6 +13,10 @@
 #include "SDL.h"
 #define PROGRAM_NAME "ModelView"
 
+#include <imgui.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_sdl2.h>
+
 #include <glm/glm.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -86,6 +90,8 @@ static void update_window_size(Renderer *renderer, u32 *win_width, u32 *win_heig
 
 static bool process_input_events(SDL_Event *event, Renderer *renderer, u32 *win_width, u32 *win_height) {
     while (SDL_PollEvent(event) > 0) {
+        ImGui_ImplSDL2_ProcessEvent(event);
+
         switch (event->type) {
             case SDL_WINDOWEVENT:
                 switch (event->window.event) {
@@ -99,13 +105,16 @@ static bool process_input_events(SDL_Event *event, Renderer *renderer, u32 *win_
                 }
                 break;
             case SDL_KEYDOWN:
-                io_change_state(event->key.keysym.scancode, TRUE);
+                if (!ImGui::GetIO().WantCaptureKeyboard)
+                    io_change_state(event->key.keysym.scancode, TRUE);
                 break;
             case SDL_KEYUP:
-                io_change_state(event->key.keysym.scancode, FALSE);
+                if (!ImGui::GetIO().WantCaptureKeyboard)
+                    io_change_state(event->key.keysym.scancode, FALSE);
                 break;
             case SDL_MOUSEMOTION:
-                camera_update_direction(renderer->camera, event->motion.xrel, event->motion.yrel);
+                if (!ImGui::GetIO().WantCaptureMouse)
+                    camera_update_direction(renderer->camera, event->motion.xrel, event->motion.yrel);
                 break;
             default:
                 break;
@@ -239,6 +248,16 @@ int main(int argc, char *argv[]) {
     DemoSceneState scene_state;
     init_demo_scene(&scene_state, win_width, win_height);
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplSDL2_InitForOpenGL(mainwindow, maincontext);
+    ImGui_ImplOpenGL3_Init("#version 150");
+
+    bool wireframe_enabled = false;
+    bool show_debug_normals = scene_state.renderer.show_debug_normals == TRUE;
+
     f64 debug_last_toggle = 0.0;
 
     while (running) {
@@ -253,6 +272,20 @@ int main(int argc, char *argv[]) {
             running = 0;
             break;
         }
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL2_NewFrame(mainwindow);
+        ImGui::NewFrame();
+
+        ImGui::Begin("Debug");
+        ImGui::Checkbox("Show debug normals", &show_debug_normals);
+        ImGui::Checkbox("Wireframe", &wireframe_enabled);
+        ImGui::SliderFloat("Camera speed", &scene_state.renderer.camera->speed, 0.1f, 20.0f);
+        ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+        ImGui::End();
+
+        scene_state.renderer.show_debug_normals = show_debug_normals ? TRUE : FALSE;
+        glPolygonMode(GL_FRONT_AND_BACK, wireframe_enabled ? GL_LINE : GL_FILL);
 
         if (io_is_key_pressed(SDL_SCANCODE_F4) && debug_last_toggle > .1) {
             for (u32 rdr_i=0; rdr_i<scene_state.render_list.len(); rdr_i++)
@@ -279,8 +312,17 @@ int main(int argc, char *argv[]) {
             rdr_draw(&scene_state.renderer, &scene_state.scene, renderme);
         }
 
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         SDL_GL_SwapWindow(mainwindow);
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
 
     /* Delete our opengl context, destroy our window, and shutdown SDL */
     SDL_GL_DeleteContext(maincontext);

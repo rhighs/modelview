@@ -54,6 +54,7 @@ Renderer rdr_init(Camera *camera, u32 width, u32 height) {
     result.camera = camera;
     result.vp_width = width;
     result.vp_height = height;
+    result.show_debug_normals = TRUE;
 
     return result;
 }
@@ -158,7 +159,7 @@ static void rdr_draw_internal(Renderer *renderer, Scene *scene, RenderMe *render
 }
 
 void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
-    if (renderme->show_debug) {
+    if (renderer->show_debug_normals && renderme->show_debug) {
         ShaderProgram *program = &debug_program;
         sp_use(program);
 
