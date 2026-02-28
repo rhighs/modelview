@@ -1,75 +1,140 @@
 # ModelView
 
-A simple 3D model viewer built with OpenGL.
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
+[![CMake](https://img.shields.io/badge/CMake-3.22%2B-brightgreen.svg)](https://cmake.org/)
+[![Platforms](https://img.shields.io/badge/Platforms-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)](#platform-setup)
 
-![lambo on windows](./assets/winlambo.png)
+A lightweight OpenGL model viewer written in C++ with SDL2 and GLAD.
 
-## setup submodules
+## Features
+
+- Real-time 3D rendering with OpenGL 3.2 core profile.
+- OBJ mesh loading pipeline and material-based shading.
+- Camera controls, debug visualization toggles, and dynamic lighting.
+- Cross-platform CMake build (macOS, Linux, Windows).
+
+## Screenshots
+
+- Windows render sample (`assets/winlambo.png`):
+
+  ![ModelView screenshot on Windows](./assets/winlambo.png)
+
+- Additional screenshots for macOS/Linux and glTF scenes can be added under `assets/`.
+
+## Quick Start
+
+1. Clone and initialize submodules:
+
+   ```bash
+   git clone <your-fork-or-repo-url>
+   cd modelview
+   git submodule update --init --recursive
+   ```
+
+2. Run one command setup:
+
+   ```bash
+   ./setup.sh
+   ```
+
+This installs dependencies (where supported), configures CMake, and builds into `build/`.
+
+## Platform Setup
+
+### macOS (Apple Silicon + Intel)
+
+Prerequisites:
+
+- Xcode Command Line Tools
+- Homebrew
+
+Install manually (optional if using `./setup.sh`):
 
 ```bash
-git submodule init && git submodule update --recursive
+xcode-select --install
+brew install cmake ninja pkg-config
 ```
 
-## Environment setup
+Build:
 
-**NOTE**: make sure `clang --version` is >= 3.5 if you want `compile_commands.json` generation, this is useful in case you're working with VSCode; LSP config comes free.
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+```
+
+Notes:
+
+- OpenGL is linked via system framework through CMake `find_package(OpenGL)`.
+- macOS deprecation warnings are silenced with `GL_SILENCE_DEPRECATION` in the build.
+- For universal binaries, configure with:
+
+  ```bash
+  cmake -S . -B build -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+  ```
+
+### Linux (Ubuntu/Debian)
+
+Install dependencies:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  build-essential cmake ninja-build pkg-config \
+  libx11-dev libxext-dev libxrandr-dev libxinerama-dev \
+  libxcursor-dev libxi-dev libxfixes-dev \
+  libwayland-dev libxkbcommon-dev wayland-protocols
+```
+
+Build:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+```
 
 ### Windows
 
-I've been testing this on a Windows machine using Visual Studio 2022 Community Edition. Please ensure the following:
+Recommended:
 
-- Install a version of **C++ Build Tools** via the **Visual Studio Installer**.
-- Ensure `MSBuild.exe` is listed in your Windows `Path` environment variable.
-- Add the following directory to your `Path` environment variable to prevent crashes:
-    ```
-    C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\bin\Hostx64\x64
-    ```
-    This prevents the `modelview.exe` from crashing on startup due to missing `clang_rt.asan_dbg_dynamic-x86_64.dll` and `clang_rt.asan_dynamic-x86_64.dll`.
+- Visual Studio 2022 with C++ workload
+- CMake
 
-- **OpenGL** must be installed on your system:
-    - Install **Mesa** using MSYS pacman:
-        ```bash
-        pacman -S mingw64/mingw-w64-x86_64-mesa
-        ```
-    - Alternatively, you can follow the [official Khronos guide](https://www.khronos.org/opengl/wiki/Platform_specifics:_Windows#Installing_Mesa3D_on_Windows), but using MSYS pacman is easier.
+Build options:
 
-### Linux/MacOS
+- Use the included batch build:
 
-Both Linux and macOS share similar setup steps. Here's what you need to do:
+  ```bat
+  .\compile.bat
+  ```
 
-- **Install OpenGL**:
-   - **Linux**: Use your package manager to install the OpenGL libraries:
-     ```bash
-     sudo apt-get install libgl1-mesa-dev
-     ```
-     Or, if using **Arch Linux**:
-     ```bash
-     sudo pacman -S mesa
-     ```
+- Or use CMake directly from Developer Command Prompt:
 
-   - **macOS**: OpenGL should already be installed by default. If you need to ensure you have the latest version, you can use Homebrew:
-     ```bash
-     brew install mesa
-     ```
+  ```bat
+  cmake -S . -B build -G "Visual Studio 17 2022"
+  cmake --build build --config Release
+  ```
 
-## Compiling
+If you run from MSYS2/Git Bash, `setup.sh` will print Windows-specific guidance.
 
-Use the appropriate compile script for your platform. The script will generate a debug-compatible executable.
+## Run
 
-- **Linux/macOS**:
-    ```bash
-    ./compile.sh
-    ```
+After building, run the generated executable from `build/` (or the output folder for your generator/config).
 
-- **Windows**:
-    ```bash
-    .\compile.bat
-    ```
+## Project Layout
 
-## Supported Formats
+- `src/` - application and rendering code
+- `external/` - vendored dependencies (SDL2, GLAD, cglm, glm, stb)
+- `shaders/` - GLSL shaders
+- `res/` - model and texture assets
+- `assets/` - README screenshots
 
-| File Format | Supported | Platform | Supported |
-|-------------|-----------|----------|-----------|
-| .obj        | Yes       | Linux    | Yes       |
-| .gltf       | No        | macOS    | No        |
-| .fbx        | No        | Win32    | No        |
+## Troubleshooting
+
+- If submodules are missing, rerun:
+
+  ```bash
+  git submodule update --init --recursive
+  ```
+
+- If `cmake` is not found on macOS/Linux, install it with your package manager and re-run `./setup.sh`.
+- If OpenGL context creation fails on macOS, ensure you are using the OpenGL core profile (already set in `src/main.cpp`).

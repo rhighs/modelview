@@ -1,14 +1,9 @@
-#include "SDL_video.h"
 #include "core/string.h"
 #include "io.h"
 #include "scene.h"
-#include <cctype>
+#include <cmath>
+#include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <math.h>
 
 /* If using gl3.h */
 /* Ensure we are using opengl's core profile only */
@@ -16,7 +11,7 @@
 #include <glad/glad.h>
 
 #include "SDL.h"
-#define PROGRAM_NAME "test"
+#define PROGRAM_NAME "ModelView"
 
 #include <glm/glm.hpp>
 
@@ -30,8 +25,6 @@
 #include "shader.h"
 #include "renderer.h"
 
-#include "string.h"
-
 #include "mesh_utils.h"
 #include "renderme.h"
 
@@ -42,13 +35,13 @@
 
 /* A simple function that prints a message, the error code returned by SDL,
  * and quits the application */
-void sdldie(const char *msg) {
+static void sdldie(const char *msg) {
     printf("%s: %s\n", msg, SDL_GetError());
     SDL_Quit();
     exit(1);
 }
 
-void checkSDLError(int line) {
+static void checkSDLError(int line) {
 #ifndef NDEBUG
 	const char *error = SDL_GetError();
 	if (*error != '\0') {
@@ -57,29 +50,15 @@ void checkSDLError(int line) {
 			printf(" + line: %i\n", line);
 		SDL_ClearError();
 	}
+#else
+    (void)line;
 #endif
 }
 
 #include "core/vec.h"
 #include "wavefront.h"
 
-char *read_shader_file(const char *filepath) {
-    FILE *file = fopen(filepath, "r");
-    fseek(file, 0, SEEK_END);
-    u32 filesize = ftell(file);
-    rewind(file);
-
-    char *shader_content = (char *)malloc(filesize+1);
-    if (!fread(shader_content, sizeof(char), filesize, file)) {
-        fprintf(stderr, "Could not read shader file: %s\n", filepath);
-        exit(-1);
-    }
-    shader_content[filesize] = '\0';
-
-    return shader_content;
-}
-
-u32 bind_texture_info(LoadedImage image) {
+static u32 bind_texture_info(LoadedImage image) {
     u32 texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -91,11 +70,104 @@ u32 bind_texture_info(LoadedImage image) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     return texture;
 }
 
+static void update_window_size(Renderer *renderer, u32 *win_width, u32 *win_height, const SDL_WindowEvent *window_event) {
+    const u32 width = window_event->data1;
+    const u32 height = window_event->data2;
+    *win_width = width;
+    *win_height = height;
+    renderer->vp_width = width;
+    renderer->vp_height = height;
+    glViewport(0, 0, width, height);
+}
+
+static bool process_input_events(SDL_Event *event, Renderer *renderer, u32 *win_width, u32 *win_height) {
+    while (SDL_PollEvent(event) > 0) {
+        switch (event->type) {
+            case SDL_WINDOWEVENT:
+                switch (event->window.event) {
+                    case SDL_WINDOWEVENT_RESIZED:
+                        update_window_size(renderer, win_width, win_height, &event->window);
+                        break;
+                    case SDL_WINDOWEVENT_CLOSE:
+                        return false;
+                    default:
+                        break;
+                }
+                break;
+            case SDL_KEYDOWN:
+                io_change_state(event->key.keysym.scancode, TRUE);
+                break;
+            case SDL_KEYUP:
+                io_change_state(event->key.keysym.scancode, FALSE);
+                break;
+            case SDL_MOUSEMOTION:
+                camera_update_direction(renderer->camera, event->motion.xrel, event->motion.yrel);
+                break;
+            default:
+                break;
+        }
+    }
+
+    return true;
+}
+
+struct DemoSceneState {
+    Camera camera;
+    Renderer renderer;
+    Scene scene;
+    RenderMe model;
+    Vec<RenderMe *> render_list;
+};
+
+static void init_demo_scene(DemoSceneState *state, u32 win_width, u32 win_height) {
+    glm::vec3 camera_pos = { 0.0f, 0.0f, 3.0f };
+
+    String obj_model_filepath = String("./res/models/lambo/lambo.obj");
+    String obj_path = Loader::resolve_filepath(obj_model_filepath.raw());
+    OBJModel model_data = wf_load_obj_model(obj_path.raw());
+    IO_LOG(stdout, "[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d",
+            model_data.vertices.len(),
+            model_data.normals.len(),
+            model_data.tex_coords.len(),
+            model_data.faces.len());
+
+    Vec<f32> debug_points = model_data.vertices;
+
+    Material material = mat_make(MAT_CHROME,
+            glm::vec3(1.0f, .7f, 0.0f));
+
+    state->model = rdrme_from_obj(&model_data, material, TRUE, TRUE);
+    rdrme_setup_debug(&state->model, debug_points);
+    state->model.transform.scale = glm::vec3(.05f, .05f, .05f);
+
+    state->renderer = rdr_init(&state->camera, win_width, win_height);
+    camera_init(state->renderer.camera, camera_pos);
+
+    const f32 light_x = std::cos(SDL_GetTicks()/1000.0f) * 1.0f;
+    const f32 light_z = std::sin(SDL_GetTicks()/1000.0f) * 1.0f;
+
+    glm::vec3 light_position = { light_x, 10.0f, light_z };
+    glm::vec3 light_color = { 1.0f, 1.0f, 1.0f };
+
+    PointLight main_light = point_light_make(light_position, light_color, light_color, light_color);
+    DirectionalLight dir_light = directional_light_make(glm::vec3(-0.5, -0.5, -0.5), light_color, light_color, light_color);
+
+    state->scene = scene_init();
+    scene_add_point_light(&state->scene, main_light);
+    scene_add_directional_light(&state->scene, dir_light);
+
+    state->render_list = Vec<RenderMe *>(32);
+    state->render_list.push_back(&state->model);
+}
+
 int main(int argc, char *argv[]) {
+    (void)argc;
+    (void)argv;
+
     SDL_Window *mainwindow;
     SDL_GLContext maincontext;
 
@@ -164,64 +236,10 @@ int main(int argc, char *argv[]) {
 
     glEnable(GL_DEPTH_TEST);
 
-    glm::vec3 camera_pos = { 0.0f, 0.0f, 3.0f };
-    Camera camera;
-
-    String obj_model_filepath = String("./res/models/lambo/lambo.obj");
-    String obj_path = Loader::resolve_filepath(obj_model_filepath.raw());
-    OBJModel mymodel = wf_load_obj_model(obj_path.raw());
-    IO_LOG(stdout, "[MODEL_INFO]: verts = %d, normals = %d, tex_coords = %d, faces = %d",
-            mymodel.vertices.len(),
-            mymodel.normals.len(),
-            mymodel.tex_coords.len(),
-            mymodel.faces.len());
-
-    String f32_test = String("1.22345");
-    Pair<f32, b8> r = f32_test.to_f32();
-    if (r.second == false) {
-        printf("parsing failed");
-        exit(1);
-    }
-    printf("PARSED VALUE = %f\n", r.first);
-
-    // String mtl_path = Loader::resolve_filepath("./res/models/winter_girl/Winter Girl.mtl");
-    // Vec<OBJMaterial> mtl_data = wf_load_obj_material_data(mtl_path.raw());
-    // for (OBJMaterial &mtl: mtl_data) {
-    //     String mtl_str = mtl.print();
-    //     printf("%s\n", mtl_str.raw());
-    // }
-
-    Vec<f32> debug_points = mymodel.vertices;
-
-    // Light coloring and shader stuff
-    Material material = mat_make(MAT_CHROME,
-            glm::vec3(1.0f, .7f, 0.0f));
-
-    RenderMe rme = rdrme_from_obj(&mymodel, material, TRUE, TRUE);
-    rdrme_setup_debug(&rme, debug_points);
-
-    rme.transform.scale = glm::vec3(.05f, .05f, .05f);
-
-    Renderer renderer = rdr_init(&camera, win_width, win_height);
-    camera_init(renderer.camera, camera_pos);
-
-    const f32 light_x = cos(SDL_GetTicks()/1000.0f) * 1.0f;
-    const f32 light_z = sin(SDL_GetTicks()/1000.0f) * 1.0f;
-
-    glm::vec3 light_position = { light_x, 10.0f, light_z };
-    glm::vec3 light_color = { 1.0f, 1.0f, 1.0f };
-
-    PointLight main_light = point_light_make(light_position, light_color, light_color, light_color);
-    DirectionalLight dir_light = directional_light_make(glm::vec3(-0.5, -0.5, -0.5), light_color, light_color, light_color);
-
-    Scene main_scene = scene_init();
-    scene_add_point_light(&main_scene, main_light);
-    scene_add_directional_light(&main_scene, dir_light);
+    DemoSceneState scene_state;
+    init_demo_scene(&scene_state, win_width, win_height);
 
     f64 debug_last_toggle = 0.0;
-
-    Vec<RenderMe *> render_list(32);
-    render_list.push_back(&rme);
 
     while (running) {
         last_time = now_time;
@@ -231,64 +249,39 @@ int main(int argc, char *argv[]) {
         glCullFace(GL_BACK);
         glFrontFace(GL_CCW);
 
-        while (SDL_PollEvent(&event) > 0) {
-            switch (event.type) {
-            case SDL_WINDOWEVENT: {
-                switch (event.window.event) {
-                case SDL_WINDOWEVENT_RESIZED : {
-                    const u32 w = event.window.data1;
-                    const u32 h = event.window.data2;
-                    win_width = w;
-                    win_height = h;
-                    renderer.vp_width = w;
-                    renderer.vp_height = h;
-                    glViewport(0, 0, w, h);
-                    break;
-                }
-                case SDL_WINDOWEVENT_CLOSE: {
-                    goto quit;
-                }
-                }
-                break;
-            }
-            case SDL_KEYDOWN: 
-                io_change_state(event.key.keysym.scancode, TRUE); break;
-            case SDL_KEYUP: 
-                io_change_state(event.key.keysym.scancode, FALSE); break;
-            case SDL_MOUSEMOTION:
-                camera_update_direction(renderer.camera, event.motion.xrel, event.motion.yrel); break;
-            }
+        if (!process_input_events(&event, &scene_state.renderer, &win_width, &win_height)) {
+            running = 0;
+            break;
         }
 
         if (io_is_key_pressed(SDL_SCANCODE_F4) && debug_last_toggle > .1) {
-            for (u32 rdr_i=0; rdr_i<render_list.len(); rdr_i++)
-                render_list[rdr_i]->show_debug = !render_list[rdr_i]->show_debug;
+            for (u32 rdr_i=0; rdr_i<scene_state.render_list.len(); rdr_i++)
+                scene_state.render_list[rdr_i]->show_debug = !scene_state.render_list[rdr_i]->show_debug;
             debug_last_toggle = 0.0;
         } else {
             debug_last_toggle += dt_secs;
         }
 
         dt_secs = (f64)((now_time - last_time) / (f64)SDL_GetPerformanceFrequency());
-        camera_update(renderer.camera, dt_secs);
+        camera_update(scene_state.renderer.camera, dt_secs);
 
         const f32 y_rotation = 10.0 * dt_secs;
-        rme.transform.rotation[1] += y_rotation;
+        scene_state.model.transform.rotation[1] += y_rotation;
 
         // Test: oscillating light position
-        main_scene.point_lights[0].position[0] = (f32)((1 + sin(((f64)SDL_GetTicks64())/1000.0)) * 10.0) - 5.0;
-        main_scene.point_lights[0].intensity = 5.0f;
+        scene_state.scene.point_lights[0].position[0] = (f32)((1 + std::sin(((f64)SDL_GetTicks64())/1000.0)) * 10.0) - 5.0;
+        scene_state.scene.point_lights[0].intensity = 5.0f;
 
         rdr_clear_color(&CLEAR_COLOR);
 
-        for (u32 rdr_i=0; rdr_i<render_list.len(); rdr_i++) {
-            RenderMe *renderme = render_list[rdr_i];
-            rdr_draw(&renderer, &main_scene, renderme);
+        for (u32 rdr_i=0; rdr_i<scene_state.render_list.len(); rdr_i++) {
+            RenderMe *renderme = scene_state.render_list[rdr_i];
+            rdr_draw(&scene_state.renderer, &scene_state.scene, renderme);
         }
 
         SDL_GL_SwapWindow(mainwindow);
     }
 
-quit:
     /* Delete our opengl context, destroy our window, and shutdown SDL */
     SDL_GL_DeleteContext(maincontext);
     SDL_DestroyWindow(mainwindow);
@@ -296,4 +289,3 @@ quit:
 
     return 0;
 }
-

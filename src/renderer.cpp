@@ -58,19 +58,21 @@ Renderer rdr_init(Camera *camera, u32 width, u32 height) {
     return result;
 }
 
-void __rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
-    ShaderProgram *program;
-    switch (renderme->shader_type) {
-        case SHADER_DEBUG_V: 
-            program = &debug_program;
-            break;
-        case SHADER_LIGHT_VN: 
-            program = &light_program;
-            break;
-        case SHADER_LIGHT_VNT: 
-            program = &light_tex_program;
-            break;
+static ShaderProgram *select_shader_program(RendermeShaderType shader_type) {
+    switch (shader_type) {
+        case SHADER_DEBUG_V:
+            return &debug_program;
+        case SHADER_LIGHT_VN:
+            return &light_program;
+        case SHADER_LIGHT_VNT:
+            return &light_tex_program;
+        default:
+            return &light_program;
     }
+}
+
+static void rdr_draw_internal(Renderer *renderer, Scene *scene, RenderMe *renderme) {
+    ShaderProgram *program = select_shader_program(renderme->shader_type);
     sp_use(program);
 
     Camera *camera = renderer->camera;
@@ -108,7 +110,7 @@ void __rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
     }
 
     if (scene->point_lights.len() > 0 && renderme->shader_type != SHADER_DEBUG_V) {
-        for (u32 i=0; i<scene->directional_lights.len(); i++) {
+        for (u32 i=0; i<scene->point_lights.len(); i++) {
             auto pl = scene->point_lights[i];
 
 #ifdef RDR_DEBUG
@@ -129,7 +131,7 @@ void __rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
 
     if (scene->directional_lights.len() > 0) {
         for (u32 i=0; i<scene->directional_lights.len(); i++) {
-            auto dl = scene->directional_lights[0];
+            auto dl = scene->directional_lights[i];
 #ifdef RDR_DEBUG
         IO_LOG(stdout, "using directional light n = %d (%f, %f, %f)", i,
                 dl.direction[0], dl.direction[1], dl.direction[2]);
@@ -193,7 +195,7 @@ void rdr_draw(Renderer *renderer, Scene *scene, RenderMe *renderme) {
         glDrawArrays(GL_TRIANGLES, 0, renderme->debug_shader_count);
     }
 
-    __rdr_draw(renderer, scene, renderme);
+    rdr_draw_internal(renderer, scene, renderme);
 }
 
 void rdr_clear_color(const glm::vec4 *color) {

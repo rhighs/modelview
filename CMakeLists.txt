@@ -3,17 +3,25 @@ project( modelview )
 
 set( CMAKE_CXX_STANDARD 17 )
 set( CMAKE_CXX_STANDARD_REQUIRED True )
-set( CMAKE_CXX_COMPILER /usr/bin/clang++ CACHE PATH "" )
 
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
-# define dev debug symbol
-if (WIN32)
-    set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /DDEV_ENABLED" )
-else (WIN32)
-    set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DDEV_ENABLED" )
-endif (WIN32)
+if( APPLE )
+    if( NOT CMAKE_OSX_ARCHITECTURES )
+        set( CMAKE_OSX_ARCHITECTURES "${CMAKE_HOST_SYSTEM_PROCESSOR}" CACHE STRING "Target macOS architecture" FORCE )
+    endif()
+
+    find_program( HOMEBREW_EXECUTABLE brew )
+    if( NOT HOMEBREW_EXECUTABLE )
+        message( STATUS "Homebrew not found. Install it from https://brew.sh for easy dependency management." )
+    else()
+        message( STATUS "Homebrew detected. If you need tools, run: brew install cmake ninja" )
+    endif()
+
+    message( STATUS "macOS build target architecture: ${CMAKE_OSX_ARCHITECTURES}" )
+    message( STATUS "To build universal binaries, configure with -DCMAKE_OSX_ARCHITECTURES=\"arm64;x86_64\"" )
+endif()
 
 set( SDL_TEST ON CACHE BOOL "" FORCE )
 set( SDL_TESTS ON CACHE BOOL "" FORCE )
@@ -30,7 +38,7 @@ add_executable( ${PROJECT_NAME}
 set_target_properties( ${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${CMAKE_PROJECT_NAME} )
 
 find_package( OpenGL REQUIRED )
-target_link_libraries( ${CMAKE_PROJECT_NAME} ${OPENGL_LIBRARIES} )
+target_link_libraries( ${CMAKE_PROJECT_NAME} OpenGL::GL )
 
 add_subdirectory( external/SDL )
 target_link_libraries( ${CMAKE_PROJECT_NAME} SDL2::SDL2main SDL2::SDL2-static )
@@ -46,5 +54,10 @@ target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/ext
 target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/cglm/include )
 target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/glm )
 target_include_directories( ${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/external/stb )
+
+target_compile_definitions( ${PROJECT_NAME} PRIVATE DEV_ENABLED )
+if( APPLE )
+    target_compile_definitions( ${PROJECT_NAME} PRIVATE GL_SILENCE_DEPRECATION )
+endif()
 
 target_compile_options( ${PROJECT_NAME} PRIVATE -Wall )
